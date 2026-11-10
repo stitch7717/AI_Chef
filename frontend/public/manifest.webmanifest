@@ -1,0 +1,12 @@
+{
+  "name": "AI 私厨",
+  "short_name": "AI 私厨",
+  "description": "会看图、懂菜谱、记得你的私人厨师",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#e9f2fb",
+  "theme_color": "#e9f2fb",
+  "icons": [
+    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml" }
+  ]
+}

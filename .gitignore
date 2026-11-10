@@ -1,0 +1,40 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+*.egg-info/
+.pytest_cache/
+
+# 环境与密钥（绝不入库）
+.env
+*.local
+.env.*
+!.env.example
+
+# 前端依赖与产物
+node_modules/
+frontend/dist/
+frontend/.vite/
+
+# 本地向量模型缓存（约 91MB，首次启动自动下载，见 README）
+model_cache/*
+!model_cache/.gitkeep
+
+# 数据库与日志
+db/
+*.db
+*.log
+logs/
+
+# 迁移临时文件
+alembic/versions/__pycache__/
+
+# IDE / 系统
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# 本地临时产物
+output/
+*.tmp
