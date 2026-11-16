@@ -42,7 +42,7 @@
           <div class="avatar">{{ m.role === 'user' ? '🧑' : '👨‍🍳' }}</div>
           <div class="bubble">
             <img v-if="m.image_url" :src="m.image_url" class="msg-img" />
-            <div class="text">{{ m.content }}</div>
+            <div class="text md" v-html="renderMd(m.content)"></div>
           </div>
         </div>
         <!-- 模型不可用时的本地 RAG 兜底（业务降级：页面不空白） -->
@@ -66,7 +66,7 @@
           <div class="avatar">👨‍🍳</div>
           <div class="bubble">
             <img v-if="pendingImage" :src="pendingImage" class="msg-img" />
-            <div class="text">{{ streamText }}<span class="cursor">▌</span></div>
+            <div class="text md" v-html="renderMd(streamText) + '<span class=\'cursor\'>▌</span>'"></div>
           </div>
         </div>
       </div>
@@ -118,6 +118,7 @@ import { ref, computed, onMounted, nextTick } from 'vue'
 import ElMessage from 'element-plus/es/components/message'
 import ElMessageBox from 'element-plus/es/components/message-box'
 import { Delete, Close, Picture, Plus, Promotion } from '@element-plus/icons-vue'
+import { marked } from 'marked'
 import { api, streamChat, uploadImage, errMsg } from '../api'
 
 const sessions = ref([])
@@ -130,6 +131,18 @@ const pendingImage = ref('')
 const uploading = ref(false)
 const msgBox = ref(null)
 const drawer = ref(false)
+/** Markdown 渲染（模型回复带 **加粗**、列表、小标题，不渲染就是一堆星号） */
+function renderMd(text) {
+  if (!text) return ''
+  // 先转义 HTML：模型输出不可信，避免 v-html 注入；再交给 marked 处理 markdown
+  const safe = String(text)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+  return marked.parse(safe, { breaks: true, gfm: true })
+}
+
+
 const fallbackRecipes = ref([])
 const fallbackReason = ref('')
 
@@ -356,6 +369,62 @@ async function send() {
   background: var(--danger); color: #fff; border-radius: 50%; padding: 2px; cursor: pointer;
 }
 .input-hint { text-align: center; font-size: 11px; color: var(--ink-400); margin-top: 8px; }
+
+/* Markdown 正文样式（模型回复里的加粗/列表/小标题） */
+/* 气泡本身是 pre-wrap 用来保留普通文本换行，但 markdown HTML 里标签间的换行
+   会被渲染成空行（表现为列表项之间巨大间隙），这里必须恢复 normal */
+.md { white-space: normal; }
+/* 气泡本身是 pre-wrap 用来保留普通文本换行，但 markdown HTML 里标签间的换行
+   会被渲染成空行（表现为列表项之间巨大间隙），这里必须恢复 normal */
+.md { white-space: normal; }
+.md :deep(h1), .md :deep(h2), .md :deep(h3) {
+  font-size: 14px; font-weight: 700; margin: 10px 0 6px; color: var(--ink-900);
+}
+.md :deep(p) { margin: 0 0 5px; }
+.md :deep(p:last-child) { margin-bottom: 0; }
+.md :deep(strong) { font-weight: 700; color: var(--ink-900); }
+.md :deep(ul), .md :deep(ol) { margin: 3px 0 6px; padding-left: 20px; }
+.md :deep(li) { margin-bottom: 2px; }
+.md :deep(li > p) { margin: 0; }
+.md :deep(code) {
+  background: var(--ink-100); padding: 1px 5px; border-radius: 4px;
+  font-family: Consolas, monospace; font-size: 12px;
+}
+.md :deep(blockquote) {
+  border-left: 3px solid var(--brand-500); padding-left: 10px;
+  color: var(--ink-600); margin: 6px 0;
+}
+.md :deep(hr) { border: none; border-top: 1px solid var(--ink-200); margin: 10px 0; }
+.md :deep(table) { border-collapse: collapse; margin: 6px 0; font-size: 13px; }
+.md :deep(th), .md :deep(td) { border: 1px solid var(--ink-200); padding: 4px 8px; }
+
+/* Markdown 正文样式（模型回复里的加粗/列表/小标题） */
+/* 气泡本身是 pre-wrap 用来保留普通文本换行，但 markdown HTML 里标签间的换行
+   会被渲染成空行（表现为列表项之间巨大间隙），这里必须恢复 normal */
+.md { white-space: normal; }
+/* 气泡本身是 pre-wrap 用来保留普通文本换行，但 markdown HTML 里标签间的换行
+   会被渲染成空行（表现为列表项之间巨大间隙），这里必须恢复 normal */
+.md { white-space: normal; }
+.md :deep(h1), .md :deep(h2), .md :deep(h3) {
+  font-size: 14px; font-weight: 700; margin: 10px 0 6px; color: var(--ink-900);
+}
+.md :deep(p) { margin: 0 0 5px; }
+.md :deep(p:last-child) { margin-bottom: 0; }
+.md :deep(strong) { font-weight: 700; color: var(--ink-900); }
+.md :deep(ul), .md :deep(ol) { margin: 3px 0 6px; padding-left: 20px; }
+.md :deep(li) { margin-bottom: 2px; }
+.md :deep(li > p) { margin: 0; }
+.md :deep(code) {
+  background: var(--ink-100); padding: 1px 5px; border-radius: 4px;
+  font-family: Consolas, monospace; font-size: 12px;
+}
+.md :deep(blockquote) {
+  border-left: 3px solid var(--brand-500); padding-left: 10px;
+  color: var(--ink-600); margin: 6px 0;
+}
+.md :deep(hr) { border: none; border-top: 1px solid var(--ink-200); margin: 10px 0; }
+.md :deep(table) { border-collapse: collapse; margin: 6px 0; font-size: 13px; }
+.md :deep(th), .md :deep(td) { border: 1px solid var(--ink-200); padding: 4px 8px; }
 
 /* 降级卡片 */
 .fallback { max-width: 460px; }

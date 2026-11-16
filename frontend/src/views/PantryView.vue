@@ -200,8 +200,8 @@ function fmtQty(q) {
 }
 
 function estimate(it) {
-  if (it.unit === '毫升') return it.quantity ? `${Math.round(it.quantity)}ml` : ''
-  if (it.unit === 'kg' || it.unit === '斤' || it.unit === 'g') {
+  // 毫升/g/kg/斤 本身就是精确值，再折算只是重复（原来"500 毫升 500ml"）
+  if (it.unit === '毫升' || it.unit === 'kg' || it.unit === '斤' || it.unit === 'g') {
     // 已是精确单位，不必再折算
     return ''
   }
@@ -236,6 +236,15 @@ function onPickIngredient(item) {
 }
 
 function onNameInput() {
+  const q = String(form.name || '').trim()
+  // 没输完时（如输入"鸡"）也要给出预览，否则弹窗一直显示"未收录"
+  if (q && !INGREDIENTS.some((it) => q.includes(it.name))) {
+    const guess = INGREDIENTS.find((it) => it.name.startsWith(q) || it.name.includes(q))
+    if (guess) {
+      preview.value = { ...guess, emoji: matchIngredient(guess.name).emoji, partial: true }
+      return
+    }
+  }
   const m = matchIngredient(form.name)
   preview.value = m.name ? m : { name: form.name, emoji: '🥗', cat: '未收录', avg: null, unit: 'g', img: null }
   // 名称匹配到图库时，单位自动跟着走（用户可改）

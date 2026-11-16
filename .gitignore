@@ -38,3 +38,4 @@ Thumbs.db
 # 本地临时产物
 output/
 *.tmp
+docs/screenshots/
