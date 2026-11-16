@@ -5,212 +5,302 @@
 <title>AI 私厨 · 交互原型</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  :root {
-    --bg: #0f1626; --panel: #182136; --line: #263147; --ink: #e8eefb;
-    --muted: #8fa0bd; --brand: #3d7fff; --ok: #35c4b5;
-  }
-  body {
-    font-family: "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
-    background: var(--bg); color: var(--ink); height: 100vh; display: flex; overflow: hidden;
-  }
+  :root { --shell:#0f1626; --panel:#182136; --line:#263147; --ink:#e8eefb; --muted:#8fa0bd; --brand:#3d7fff; }
+  body { font-family:"PingFang SC","Microsoft YaHei",system-ui,sans-serif; background:var(--shell);
+         color:var(--ink); height:100vh; display:flex; overflow:hidden; }
 
-  /* ---------- 左侧导航 ---------- */
-  aside {
-    width: 260px; flex-shrink: 0; background: var(--panel);
-    border-right: 1px solid var(--line); display: flex; flex-direction: column;
-  }
-  .brand { padding: 18px 20px 14px; border-bottom: 1px solid var(--line); }
-  .brand b { font-size: 15px; letter-spacing: .3px; }
-  .brand small { display: block; color: var(--muted); font-size: 11px; margin-top: 4px; }
-  .group { padding: 14px 20px 6px; color: var(--muted); font-size: 11px; letter-spacing: 1px; }
-  .nav { overflow-y: auto; padding-bottom: 12px; }
-  .nav button {
-    display: flex; gap: 10px; align-items: baseline; width: 100%; text-align: left;
-    background: none; border: none; color: var(--ink); font-size: 13px;
-    padding: 9px 20px; cursor: pointer; border-left: 2px solid transparent;
-    font-family: inherit;
-  }
-  .nav button:hover { background: rgba(61,127,255,.08); }
-  .nav button.on { background: rgba(61,127,255,.14); border-left-color: var(--brand); color: #fff; }
-  .nav button i { color: var(--muted); font-style: normal; font-size: 11px; min-width: 18px; }
-  .nav button.on i { color: var(--brand); }
+  /* 左侧导航 */
+  aside { width:256px; flex-shrink:0; background:var(--panel); border-right:1px solid var(--line); display:flex; flex-direction:column; }
+  .brand { padding:15px 18px 12px; border-bottom:1px solid var(--line); }
+  .brand b { font-size:14px; }
+  .brand small { display:block; color:var(--muted); font-size:10.5px; margin-top:3px; }
+  .group { padding:12px 18px 5px; color:var(--muted); font-size:10px; letter-spacing:1px; }
+  .nav { overflow-y:auto; padding-bottom:10px; }
+  .nav button { display:flex; gap:9px; width:100%; text-align:left; background:none; border:none;
+    color:var(--ink); font-size:12.5px; padding:8px 18px; cursor:pointer; border-left:2px solid transparent; font-family:inherit; }
+  .nav button:hover { background:rgba(61,127,255,.08); }
+  .nav button.on { background:rgba(61,127,255,.14); border-left-color:var(--brand); color:#fff; }
+  .nav button i { color:var(--muted); font-style:normal; font-size:10.5px; min-width:16px; }
+  .nav button.on i { color:var(--brand); }
 
-  /* ---------- 舞台 ---------- */
-  main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
-  .topbar {
-    height: 46px; flex-shrink: 0; display: flex; align-items: center; gap: 14px;
-    padding: 0 20px; border-bottom: 1px solid var(--line); color: var(--muted); font-size: 12px;
-  }
-  .topbar b { color: var(--ink); font-size: 13px; }
-  .topbar .sp { flex: 1; }
-  .topbar kbd {
-    background: #22304a; border: 1px solid var(--line); border-radius: 4px;
-    padding: 2px 6px; font-size: 11px; color: var(--ink);
-  }
-
-  .stage {
-    flex: 1; position: relative; display: flex; align-items: center; justify-content: center;
-    overflow: auto; padding: 24px;
-  }
-  .zbtn {
-    background: #22304a; border: 1px solid var(--line); color: var(--muted);
-    font-size: 11px; padding: 3px 9px; border-radius: 5px; cursor: pointer; font-family: inherit;
-  }
-  .zbtn.on { background: var(--brand); border-color: var(--brand); color: #fff; }
-  .frame-wrap { position: relative; transform-origin: center center; }
-  .frame-wrap img { display: block; width: 100%; height: 100%; object-fit: fill; border-radius: 10px; }
-
-  /* 浏览器窗口外框（桌面） */
-  .browser {
-    border-radius: 12px; overflow: hidden; background: #fff;
-    box-shadow: 0 24px 60px rgba(0,0,0,.55); border: 1px solid #2a3a55;
-  }
-  .browser .bar {
-    height: 30px; background: #eef2f8; display: flex; align-items: center; gap: 6px;
-    padding: 0 12px; border-bottom: 1px solid #dde5f0;
-  }
-  .browser .dot { width: 9px; height: 9px; border-radius: 50%; }
-  .browser .addr {
-    flex: 1; height: 16px; border-radius: 8px; background: #fff; margin-left: 8px;
-    font-size: 9px; color: #8798b3; display: flex; align-items: center; padding: 0 8px;
-  }
-  /* 手机外框 */
-  .phone {
-    border-radius: 34px; overflow: hidden; background: #fff; position: relative;
-    box-shadow: 0 24px 60px rgba(0,0,0,.55); border: 8px solid #0b1220; outline: 1px solid #2c3a55;
-  }
-
-  /* 热区 */
-  .hotspot {
-    position: absolute; border: 1.5px dashed transparent; border-radius: 6px;
-    cursor: pointer; transition: border-color .12s, background .12s;
-  }
-  .hotspot:hover { border-color: rgba(61,127,255,.95); background: rgba(61,127,255,.16); }
-  .hotspot::after {
-    content: attr(data-label); position: absolute; left: 50%; top: -22px; transform: translateX(-50%);
-    background: var(--brand); color: #fff; font-size: 10px; padding: 2px 7px; border-radius: 4px;
-    white-space: nowrap; opacity: 0; transition: opacity .12s; pointer-events: none;
-  }
-  .hotspot:hover::after { opacity: 1; }
-  body.show-zones .hotspot { border-color: rgba(61,127,255,.5); background: rgba(61,127,255,.08); }
-  body.show-zones .hotspot::after { opacity: 1; }
-
-  /* ---------- 演示模式 ---------- */
-  body.present aside, body.present .notes, body.present .topbar { display: none; }
-  body.present .stage { padding: 16px; background: #070d19; }
-  body.present .frame-wrap { transition: transform .18s ease; }
-  .hud {
-    position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%) translateY(24px);
-    display: flex; align-items: center; gap: 8px; padding: 7px 10px;
-    background: rgba(16,24,40,.86); border: 1px solid #2a3a55; border-radius: 999px;
-    backdrop-filter: blur(10px); opacity: 0; pointer-events: none; transition: all .2s ease;
-    z-index: 99;
-  }
-  body.present .hud { opacity: 1; pointer-events: auto; transform: translateX(-50%) translateY(0); }
-  .hbtn {
-    width: 28px; height: 28px; border-radius: 50%; border: 1px solid #33456b;
-    background: #1b2740; color: #dfe8fa; font-size: 14px; cursor: pointer; line-height: 1;
-    display: grid; place-items: center;
-  }
-  .hbtn:hover { background: var(--brand); border-color: var(--brand); color: #fff; }
-  .hbtn.exit:hover { background: #d9534f; border-color: #d9534f; }
-  .hinfo { font-size: 11.5px; color: #a9b8d3; padding: 0 4px; }
-  .hinfo b { color: #fff; }
-
-  /* ---------- 落地页（纯 HTML 原型） ---------- */
-  .landing { width: 100%; height: 100%; position: relative; overflow: hidden; background: #0b1220; }
-  .landing .bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
-  .landing .scrim {
-    position: absolute; inset: 0;
-    background: linear-gradient(180deg, rgba(6,12,24,.72) 0%, rgba(6,12,24,.28) 34%, rgba(6,12,24,.86) 100%);
-  }
-  .landing nav {
-    position: relative; z-index: 2; display: flex; align-items: center; gap: 20px;
-    padding: 16px 26px; color: #fff; font-size: 12px;
-  }
-  .landing nav .logo { display: flex; align-items: center; gap: 7px; font-size: 14px; font-weight: 700; }
-  .landing nav .logo span { font-size: 17px; }
-  .landing nav a { color: #fff; text-decoration: none; text-shadow: 0 1px 6px rgba(0,0,0,.5); opacity: .92; }
-  .landing nav a:hover { opacity: 1; }
-  .landing nav .sp { flex: 1; }
-  .landing .ghost { padding: 6px 10px; }
-  .landing .pill {
-    background: var(--ok); color: #06251f; font-weight: 700; padding: 7px 16px;
-    border-radius: 999px; box-shadow: 0 6px 18px rgba(53,196,181,.35);
-  }
-  .landing .hero {
-    position: relative; z-index: 2; padding: 26px 26px 0; color: #fff;
-    display: flex; flex-direction: column; height: calc(100% - 56px);
-  }
-  .landing .tag {
-    align-self: flex-start; font-size: 10px; letter-spacing: .8px; padding: 4px 10px;
-    border: 1px solid rgba(255,255,255,.4); border-radius: 999px; margin-bottom: 12px;
-  }
-  .landing h1 {
-    font-size: 30px; line-height: 1.4; max-width: 15em; font-weight: 800;
-    text-shadow: 0 2px 20px rgba(0,0,0,.45);
-  }
-  .landing h1 em { font-style: normal; color: #7fe3d4; }
-  .landing p.sub {
-    margin-top: 10px; font-size: 12.5px; line-height: 1.8; color: rgba(255,255,255,.82);
-    max-width: 34em; text-shadow: 0 1px 8px rgba(0,0,0,.5);
-  }
-  .landing .cta { display: flex; gap: 12px; margin-top: 18px; }
-  .landing .btn-main {
-    background: var(--ok); color: #06251f; font-weight: 700; font-size: 13px;
-    padding: 11px 22px; border: none; border-radius: 10px; cursor: pointer;
-  }
-  .landing .btn-ghost {
-    background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.45);
-    color: #fff; font-size: 13px; padding: 11px 20px; border-radius: 10px; cursor: pointer;
-    backdrop-filter: blur(6px);
-  }
-  .landing .cards {
-    margin-top: auto; display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; padding-bottom: 22px;
-  }
-  .landing .card {
-    background: rgba(255,255,255,.09); border: 1px solid rgba(255,255,255,.16);
-    border-radius: 12px; padding: 12px 14px; backdrop-filter: blur(8px);
-  }
-  .landing .card b { font-size: 12.5px; display: block; margin-bottom: 4px; }
-  .landing .card small { font-size: 11px; color: rgba(255,255,255,.72); line-height: 1.6; }
+  /* 舞台 */
+  main { flex:1; display:flex; flex-direction:column; min-width:0; }
+  .topbar { height:44px; flex-shrink:0; display:flex; align-items:center; gap:12px; padding:0 16px;
+    border-bottom:1px solid var(--line); color:var(--muted); font-size:11.5px; }
+  .topbar b { color:var(--ink); font-size:12.5px; }
+  .topbar .sp { flex:1; }
+  .topbar kbd { background:#22304a; border:1px solid var(--line); border-radius:4px; padding:1px 5px; font-size:10.5px; color:var(--ink); }
+  .zbtn { background:#22304a; border:1px solid var(--line); color:var(--muted); font-size:11px;
+    padding:3px 9px; border-radius:5px; cursor:pointer; font-family:inherit; }
+  .zbtn.on { background:var(--brand); border-color:var(--brand); color:#fff; }
+  .stage { flex:1; display:flex; align-items:center; justify-content:center; overflow:auto; padding:22px; }
+  .frame-wrap { transform-origin:center center; }
+  .browser { border-radius:12px; overflow:hidden; background:#fff; box-shadow:0 24px 60px rgba(0,0,0,.55); border:1px solid #2a3a55; }
+  .browser .bar { height:28px; background:#eef2f8; display:flex; align-items:center; gap:6px; padding:0 11px; border-bottom:1px solid #dde5f0; }
+  .browser .dot { width:8px; height:8px; border-radius:50%; }
+  .browser .addr { flex:1; height:15px; border-radius:8px; background:#fff; margin-left:7px; font-size:9px;
+    color:#8798b3; display:flex; align-items:center; padding:0 8px; }
+  .phone { border-radius:34px; overflow:hidden; position:relative; background:#fff;
+    box-shadow:0 24px 60px rgba(0,0,0,.55); border:8px solid #0b1220; outline:1px solid #2c3a55; }
 
   /* 右侧说明 */
-  .notes {
-    width: 250px; flex-shrink: 0; border-left: 1px solid var(--line); background: var(--panel);
-    padding: 18px 18px 20px; overflow-y: auto;
-  }
-  .notes h3 { font-size: 13px; margin-bottom: 10px; }
-  .notes .row { margin-bottom: 12px; }
-  .notes .row span { display: block; color: var(--muted); font-size: 11px; margin-bottom: 4px; }
-  .notes .row p { font-size: 12px; line-height: 1.75; color: #cfd9ec; }
-  .notes ul { padding-left: 16px; }
-  .notes li { font-size: 12px; line-height: 1.8; color: #cfd9ec; }
-  .notes .hint { margin-top: 14px; font-size: 11px; color: var(--muted); line-height: 1.7;
-    border-top: 1px dashed var(--line); padding-top: 12px; }
+  .notes { width:244px; flex-shrink:0; border-left:1px solid var(--line); background:var(--panel); padding:16px; overflow-y:auto; }
+  .notes h3 { font-size:12.5px; margin-bottom:10px; }
+  .notes .row { margin-bottom:11px; }
+  .notes .row span { display:block; color:var(--muted); font-size:10.5px; margin-bottom:3px; }
+  .notes .row p { font-size:11.5px; line-height:1.7; color:#cfd9ec; }
+  .notes ul { padding-left:15px; }
+  .notes li { font-size:11.5px; line-height:1.75; color:#cfd9ec; }
+  .notes .hint { margin-top:12px; font-size:10.5px; color:var(--muted); line-height:1.7;
+    border-top:1px dashed var(--line); padding-top:10px; }
+
+  /* 演示模式 */
+  body.present aside, body.present .notes, body.present .topbar { display:none; }
+  body.present .stage { padding:14px; background:#070d19; }
+  .hud { position:fixed; left:50%; bottom:16px; transform:translateX(-50%) translateY(20px);
+    display:flex; align-items:center; gap:7px; padding:6px 9px; background:rgba(16,24,40,.88);
+    border:1px solid #2a3a55; border-radius:999px; backdrop-filter:blur(10px); opacity:0;
+    pointer-events:none; transition:all .2s ease; z-index:99; }
+  body.present .hud { opacity:1; pointer-events:auto; transform:translateX(-50%) translateY(0); }
+  .hbtn { width:26px; height:26px; border-radius:50%; border:1px solid #33456b; background:#1b2740;
+    color:#dfe8fa; font-size:13px; cursor:pointer; display:grid; place-items:center; }
+  .hbtn:hover { background:var(--brand); border-color:var(--brand); }
+  .hbtn.exit:hover { background:#d9534f; border-color:#d9534f; }
+  .hinfo { font-size:11px; color:#a9b8d3; padding:0 3px; }
+  .hinfo b { color:#fff; }
+
+  /* ============ 应用页面样式 ============ */
+  .app { width:100%; height:100%; background:#eef4fb; color:#1b2b4a; font-size:13px; display:flex; overflow:hidden; position:relative; }
+  .card { background:#fff; border-radius:18px; border:1px solid #e4ecf7; }
+  .btn { border:none; border-radius:999px; padding:8px 18px; font-size:12.5px; cursor:pointer;
+    background:#1b2b4a; color:#fff; font-family:inherit; font-weight:600; }
+  .btn.sm { padding:5px 13px; font-size:11.5px; }
+  .hs:hover { outline:2px dashed rgba(61,127,255,.75); outline-offset:2px; }
+  body.show-zones [data-go] { outline:1.5px dashed rgba(61,127,255,.5); outline-offset:2px; }
+
+  /* 侧栏 */
+  .side { width:212px; flex-shrink:0; background:#fff; border-right:1px solid #e9f0f9; display:flex; flex-direction:column; padding:14px 10px; }
+  .side .logo { display:flex; gap:9px; align-items:center; padding:2px 8px 15px; }
+  .side .mark { width:34px; height:34px; border-radius:11px; background:#eef4ff; display:grid; place-items:center; font-size:17px; }
+  .side .lname { font-size:13.5px; font-weight:700; }
+  .side .lslogan { font-size:10px; color:#93a3bc; margin-top:1px; }
+  .side .menu { display:flex; flex-direction:column; gap:2px; }
+  .side .mi { display:flex; align-items:center; gap:9px; padding:9px 11px; border-radius:10px; font-size:12.5px; color:#5a6b85; }
+  .side .mi .ic { width:16px; text-align:center; }
+  .side .mi.on { background:#eef4ff; color:#3d7fff; font-weight:600; }
+  .side .foot { margin-top:auto; display:flex; align-items:center; gap:8px; padding:9px 8px 2px; }
+  .side .ava { width:30px; height:30px; border-radius:50%; background:#1b2b4a; color:#fff; display:grid; place-items:center; font-size:12px; }
+  .side .uname { font-size:12px; font-weight:600; }
+  .side .usub { font-size:10px; color:#93a3bc; }
+
+  /* 落地页 */
+  .landing { width:100%; height:100%; position:relative; overflow:hidden; background:#0b1220; }
+  .landing .bg { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+  .landing .scrim { position:absolute; inset:0;
+    background:linear-gradient(180deg, rgba(6,12,24,.74) 0%, rgba(6,12,24,.26) 34%, rgba(6,12,24,.88) 100%); }
+  .landing nav { position:relative; z-index:2; display:flex; align-items:center; gap:18px; padding:15px 24px; color:#fff; font-size:12px; }
+  .landing nav .logo { display:flex; align-items:center; gap:7px; font-size:13.5px; font-weight:700; }
+  .landing nav a { color:#fff; text-decoration:none; text-shadow:0 1px 6px rgba(0,0,0,.5); opacity:.9; cursor:pointer; }
+  .landing nav .sp { flex:1; }
+  .landing .pill { background:#35c4b5; color:#06251f; font-weight:700; padding:6px 15px; border-radius:999px;
+    box-shadow:0 6px 18px rgba(53,196,181,.35); cursor:pointer; }
+  .landing .hero { position:relative; z-index:2; padding:22px 24px 0; color:#fff; height:calc(100% - 52px); display:flex; flex-direction:column; }
+  .landing .kicker { align-self:flex-start; font-size:9.5px; letter-spacing:.9px; padding:3px 9px;
+    border:1px solid rgba(255,255,255,.38); border-radius:999px; margin-bottom:11px; }
+  .landing h1 { font-size:29px; line-height:1.42; font-weight:800; text-shadow:0 2px 20px rgba(0,0,0,.45); }
+  .landing h1 em { font-style:normal; color:#7fe3d4; }
+  .landing p.sub { margin-top:9px; font-size:12px; line-height:1.85; color:rgba(255,255,255,.84);
+    max-width:36em; text-shadow:0 1px 8px rgba(0,0,0,.5); }
+  .landing .cta { display:flex; gap:10px; margin-top:16px; }
+  .landing .btn-main { background:#35c4b5; color:#06251f; font-weight:700; font-size:12.5px; padding:10px 20px;
+    border:none; border-radius:10px; cursor:pointer; font-family:inherit; }
+  .landing .btn-ghost { background:rgba(255,255,255,.1); border:1px solid rgba(255,255,255,.45); color:#fff;
+    font-size:12.5px; padding:10px 18px; border-radius:10px; cursor:pointer; backdrop-filter:blur(6px); font-family:inherit; }
+  .landing .cards { margin-top:auto; display:grid; grid-template-columns:repeat(3,1fr); gap:10px; padding-bottom:18px; }
+  .landing .c { background:rgba(255,255,255,.09); border:1px solid rgba(255,255,255,.16); border-radius:12px;
+    padding:11px 13px; backdrop-filter:blur(8px); }
+  .landing .c b { font-size:12px; display:block; margin-bottom:3px; }
+  .landing .c small { font-size:10.5px; color:rgba(255,255,255,.72); line-height:1.6; }
+
+  /* 登录 */
+  .login { width:100%; height:100%; display:grid; place-items:center;
+    background:radial-gradient(1000px 600px at 20% 0%, #e6f0ff 0%, #eef4fb 45%, #e9f2fb 100%); }
+  .login .box { width:372px; }
+  .login .logo-row { display:flex; gap:10px; align-items:center; justify-content:center; margin-bottom:15px; }
+  .login .mark { width:44px; height:44px; border-radius:14px; background:#1b2b4a; display:grid; place-items:center; font-size:21px; }
+  .login .title { font-size:21px; font-weight:800; letter-spacing:.5px; }
+  .login .sl { font-size:11px; color:#93a3bc; margin-top:3px; }
+  .login .panel { padding:20px 22px 22px; border-radius:20px; }
+  .login .tabs { display:flex; gap:18px; border-bottom:1px solid #eef2f8; margin-bottom:16px; }
+  .login .tab { padding:0 0 9px; font-size:13px; color:#93a3bc; cursor:pointer; font-weight:600; }
+  .login .tab.on { color:#1b2b4a; box-shadow:inset 0 -2px 0 #3d7fff; }
+  .login .field { margin-bottom:12px; }
+  .login .field label { display:block; font-size:11px; color:#5a6b85; margin-bottom:5px; }
+  .login .inp { height:38px; border-radius:10px; border:1px solid #e2eaf6; background:#f7faff;
+    display:flex; align-items:center; padding:0 12px; font-size:12.5px; color:#93a3bc; }
+  .login .inp.solid { color:#1b2b4a; }
+  .login .submit { width:100%; height:40px; border-radius:10px; background:#1b2b4a; color:#fff; border:none;
+    font-size:13px; font-weight:600; cursor:pointer; margin-top:4px; font-family:inherit; }
+  .login .tip { text-align:center; font-size:10.5px; color:#93a3bc; margin-top:12px; line-height:1.7; }
+  .login .reg { display:none; }
+  .login.reg-mode .login-form { display:none; }
+  .login.reg-mode .reg { display:block; }
+
+  /* 对话 */
+  .chat { flex:1; display:flex; flex-direction:column; min-width:0; }
+  .chat .msgs { flex:1; padding:18px 22px; display:flex; flex-direction:column; gap:14px; overflow:hidden; }
+  .msg { display:flex; gap:9px; }
+  .msg .av { width:28px; height:28px; border-radius:50%; background:#eef4ff; display:grid; place-items:center; font-size:14px; flex-shrink:0; }
+  .msg .bd { max-width:648px; }
+  .bubble { background:#fff; border:1px solid #e9f0f9; border-radius:14px; padding:12px 15px; font-size:12.5px; line-height:1.8; }
+  .msg.me { justify-content:flex-end; }
+  .msg.me .bd { max-width:420px; }
+  .msg.me .bubble { background:#1b2b4a; color:#fff; border:none; }
+  .msg .h { font-size:14px; font-weight:700; margin:8px 0 5px; }
+  .msg .h:first-child { margin-top:0; }
+  .msg ul, .msg ol { padding-left:19px; margin:4px 0 6px; }
+  .msg li { margin-bottom:2px; }
+  .msg .kv { color:#5a6b85; }
+  .chat .input { padding:0 18px 16px; }
+  .chat .ibox { display:flex; align-items:flex-end; gap:9px; background:#fff; border:1px solid #e4ecf7;
+    border-radius:16px; padding:9px 10px; box-shadow:0 4px 16px rgba(27,43,74,.05); }
+  .chat .icon-btn { width:32px; height:32px; border-radius:10px; border:1px solid #e4ecf7; background:#f7faff;
+    display:grid; place-items:center; font-size:14px; cursor:pointer; }
+  .chat .ph { flex:1; font-size:12.5px; color:#93a3bc; padding:6px 2px; }
+  .chat .send { width:32px; height:32px; border-radius:10px; background:#1b2b4a; color:#fff; display:grid; place-items:center; font-size:14px; cursor:pointer; }
+  .chat .hint { text-align:center; font-size:10px; color:#b3c0d4; margin-top:7px; }
+
+  /* 库存 */
+  .pantry { flex:1; padding:20px 26px; overflow:hidden; }
+  .ov { padding:16px 18px; margin-bottom:14px; }
+  .ov .num { font-size:32px; font-weight:800; line-height:1.1; }
+  .ov .num span { font-size:13px; font-weight:600; color:#5a6b85; }
+  .ov .lb { font-size:11.5px; color:#93a3bc; margin-top:5px; }
+  .ov .metrics { display:flex; gap:24px; margin-top:13px; }
+  .ov .m { display:flex; align-items:center; gap:7px; font-size:11px; }
+  .ov .ring { width:12px; height:12px; border-radius:50%; border:3px solid currentColor; }
+  .ov .tip2 { margin-top:13px; padding:9px 12px; background:#eef4ff; border-radius:10px; font-size:11.5px; color:#5a6b85; line-height:1.6; }
+  .phead { display:flex; align-items:flex-end; justify-content:space-between; margin-bottom:12px; }
+  .phead h2 { font-size:17px; font-weight:800; }
+  .phead p { font-size:11.5px; color:#93a3bc; margin-top:3px; }
+  .phead .acts { display:flex; align-items:center; gap:12px; }
+  .switch { display:flex; align-items:center; gap:6px; font-size:11.5px; color:#5a6b85; }
+  .sw { width:30px; height:16px; border-radius:999px; background:#dfe7f3; position:relative; }
+  .sw::after { content:""; position:absolute; width:12px; height:12px; border-radius:50%; background:#fff; top:2px; left:2px; }
+  .rows { display:flex; flex-direction:column; gap:8px; }
+  .row { display:flex; align-items:center; gap:11px; padding:9px 13px; border-radius:14px; background:#fff; border:1px solid #e9f0f9; }
+  .row .thumb { width:42px; height:42px; border-radius:11px; overflow:hidden; background:#f2f6fb; flex-shrink:0; }
+  .row .thumb img { width:100%; height:100%; object-fit:cover; display:block; }
+  .row .nm { font-size:13px; font-weight:700; }
+  .row .qty { font-size:11px; color:#93a3bc; margin-top:2px; }
+  .row .qty em { font-style:normal; color:#2fb37a; font-weight:600; margin-left:4px; }
+  .row .pillst { display:inline-flex; align-items:center; gap:5px; font-size:10.5px; font-weight:600;
+    color:#2fb37a; background:#eafaf3; padding:3px 9px; border-radius:999px; margin-left:auto; }
+  .row .pillst i { width:5px; height:5px; border-radius:50%; background:currentColor; }
+  .row .ops { display:flex; gap:8px; color:#93a3bc; font-size:13px; }
+
+  /* 弹窗 */
+  .mask { position:absolute; inset:0; background:rgba(20,32,54,.42); display:grid; place-items:center; backdrop-filter:blur(2px); z-index:20; }
+  .modal { width:424px; background:#fff; border-radius:18px; padding:18px 20px 20px; box-shadow:0 20px 50px rgba(15,26,45,.28); }
+  .modal h3 { font-size:15px; margin-bottom:12px; }
+  .modal .preview { display:flex; gap:11px; align-items:center; background:#f5f9ff; border-radius:12px; padding:10px 12px; margin-bottom:13px; }
+  .modal .preview img { width:52px; height:52px; border-radius:11px; object-fit:cover; }
+  .modal .preview b { font-size:13.5px; display:block; }
+  .modal .preview small { display:block; font-size:10.5px; color:#5a6b85; line-height:1.6; }
+  .modal .f { margin-bottom:11px; }
+  .modal .f label { display:block; font-size:11px; color:#5a6b85; margin-bottom:5px; }
+  .modal .inp { height:36px; border-radius:9px; border:1px solid #e2eaf6; background:#f7faff;
+    display:flex; align-items:center; padding:0 11px; font-size:12.5px; color:#1b2b4a; }
+  .modal .caret { width:1px; height:14px; background:#3d7fff; margin-left:1px; }
+  .modal .sug { margin-top:4px; background:#fff; border:1px solid #e4ecf7; border-radius:10px;
+    box-shadow:0 10px 26px rgba(27,43,74,.12); overflow:hidden; }
+  .modal .sug .it { display:flex; gap:9px; align-items:center; padding:7px 10px; font-size:12px; }
+  .modal .sug .it img { width:26px; height:26px; border-radius:7px; object-fit:cover; }
+  .modal .sug .it.on { background:#eef4ff; }
+  .modal .sug .it small { color:#93a3bc; font-size:10px; }
+  .modal .foot { display:flex; justify-content:flex-end; gap:9px; }
+  .modal .btn2 { border-radius:999px; padding:7px 17px; font-size:12.5px; cursor:pointer; font-family:inherit;
+    border:1px solid #dbe4f0; background:#fff; color:#1b2b4a; }
+  .modal .btn2.pri { background:#1b2b4a; color:#fff; border-color:#1b2b4a; font-weight:600; }
+
+  /* 发现 */
+  .disc { flex:1; padding:18px 26px; overflow:hidden; }
+  .masthead { display:flex; align-items:flex-end; justify-content:space-between; margin-bottom:12px; }
+  .masthead .eyebrow { font-size:10px; letter-spacing:1.6px; color:#3d7fff; font-weight:700; }
+  .masthead h1 { font-size:26px; font-weight:800; letter-spacing:.5px; margin-top:3px; }
+  .masthead p { font-size:11.5px; color:#93a3bc; margin-top:4px; }
+  .search { display:flex; gap:8px; }
+  .search .inp { width:190px; height:32px; border-radius:999px; border:1px solid #e4ecf7; background:#fff;
+    display:flex; align-items:center; padding:0 12px; font-size:11.5px; color:#93a3bc; }
+  .chips { display:flex; gap:7px; margin-bottom:12px; }
+  .chip { font-size:11px; padding:4px 11px; border-radius:999px; background:#fff; border:1px solid #e4ecf7; color:#5a6b85; cursor:pointer; }
+  .chip.on { background:#1b2b4a; color:#fff; border-color:#1b2b4a; }
+  .grid3 { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
+  .dish { background:#fff; border:1px solid #e9f0f9; border-radius:16px; overflow:hidden; }
+  .dish .cover { position:relative; height:128px; background:#f2f6fb; }
+  .dish .cover img { width:100%; height:100%; object-fit:cover; display:block; }
+  .dish .badge { position:absolute; top:8px; left:8px; font-size:10px; padding:2px 8px; border-radius:999px;
+    background:rgba(255,255,255,.88); backdrop-filter:blur(4px); color:#1b2b4a; font-weight:600; }
+  .dish .fav { position:absolute; top:7px; right:7px; width:22px; height:22px; border-radius:50%;
+    background:rgba(255,255,255,.88); display:grid; place-items:center; font-size:11px; }
+  .dish .bd { padding:9px 11px 11px; }
+  .dish h4 { font-size:13px; font-weight:700; }
+  .dish .meta { font-size:10.5px; color:#93a3bc; margin-top:3px; }
+  .dish .tags { display:flex; gap:4px; margin-top:7px; flex-wrap:wrap; }
+  .dish .tags span { font-size:9.5px; background:#f2f6fb; color:#5a6b85; padding:1px 7px; border-radius:999px; }
+
+  /* 移动端覆盖 */
+  .m .side { display:none; }
+  .m .tabbar { position:absolute; left:0; right:0; bottom:0; height:54px; background:#fff; border-top:1px solid #e9f0f9;
+    display:flex; align-items:center; }
+  .m .tabbar .t { flex:1; text-align:center; font-size:10px; color:#93a3bc; display:flex; flex-direction:column; gap:2px; align-items:center; }
+  .m .tabbar .t b { font-size:15px; line-height:1; font-weight:400; }
+  .m .tabbar .t.on { color:#1b2b4a; font-weight:700; }
+  .m .mbar { display:flex; align-items:center; gap:8px; padding:9px 12px; background:#fff; border-bottom:1px solid #eef2f8; }
+  .m .mbar .b { width:30px; height:30px; border-radius:9px; border:1px solid #e4ecf7; display:grid; place-items:center; font-size:13px; }
+  .m .mbar .t2 { flex:1; text-align:center; font-size:12.5px; font-weight:600; }
+  .m .chat .msgs { padding:12px; gap:10px; }
+  .m .chat .bd { max-width:80%; }
+  .m .chat .input { padding:0 10px 62px; }
+  .m .pantry { padding:12px 12px 62px; }
+  .m .ov { padding:12px 14px; margin-bottom:10px; }
+  .m .ov .num { font-size:26px; }
+  .m .phead { margin-bottom:9px; }
+  .m .phead h2 { font-size:15px; }
+  .m .row { padding:7px 10px; }
+  .m .disc { padding:12px 12px 62px; }
+  .m .masthead h1 { font-size:19px; }
+  .m .search .inp { width:128px; height:28px; font-size:10.5px; }
+  .m .grid3 { grid-template-columns:repeat(2,1fr); gap:8px; }
+  .m .dish .cover { height:96px; }
+  .m .dish h4 { font-size:11.5px; }
+  .m .chips { flex-wrap:nowrap; overflow:hidden; }
+  /* 移动端弹窗：不能沿用桌面 424px 固定宽度 */
+  .m .modal { width: 320px; padding: 14px 14px 16px; }
+  .m .modal .preview { padding: 8px 10px; margin-bottom: 11px; }
+  .m .modal .preview img { width: 44px; height: 44px; }
+  .m .modal .f { margin-bottom: 9px; }
+  .m .modal .inp { height: 33px; font-size: 12px; }
+  .m .modal .sug .it { padding: 6px 9px; font-size: 11.5px; }
+  .m .modal .sug .it img { width: 22px; height: 22px; }
+  .m .modal .btn2 { padding: 6px 15px; font-size: 12px; }
 </style>
 </head>
 <body>
 
 <aside>
-  <div class="brand">
-    <b>AI 私厨 · 交互原型</b>
-    <small>点击页面内虚线区域可跳转</small>
-  </div>
+  <div class="brand"><b>AI 私厨 · 交互原型</b><small>真页面 HTML 实现 · 按钮可点</small></div>
   <div class="nav" id="nav"></div>
 </aside>
 
 <main>
   <div class="topbar">
-    <b id="crumb">落地页</b>
+    <b id="crumb">—</b>
     <span id="devTag"></span>
     <span class="sp"></span>
-    <span class="zoom">
-      <button id="zFit" class="zbtn on">适应窗口</button>
-      <button id="zReal" class="zbtn">1:1</button>
-    </span>
-    <span><kbd>←</kbd> <kbd>→</kbd> 翻页</span>
-    <span><kbd>H</kbd> 显示热区</span>
+    <span><button id="zFit" class="zbtn on">适应窗口</button> <button id="zReal" class="zbtn">1:1</button></span>
+    <span><kbd>←</kbd><kbd>→</kbd> 翻页</span>
+    <span><kbd>H</kbd> 热区</span>
     <button id="presentBtn" class="zbtn">▶ 演示模式</button>
   </div>
   <div class="stage" id="stage"></div>
@@ -218,229 +308,368 @@
 
 <div class="notes" id="notes"></div>
 
-<!-- 演示模式：底部悬浮控制条 -->
 <div class="hud" id="hud">
-  <button class="hbtn" id="hPrev" title="上一页">‹</button>
+  <button class="hbtn" id="hPrev">‹</button>
   <span class="hinfo"><b id="hIdx">1</b> / <span id="hTotal">9</span> · <span id="hName">—</span></span>
-  <button class="hbtn" id="hNext" title="下一页">›</button>
-  <button class="hbtn exit" id="hExit" title="退出演示（Esc）">✕</button>
+  <button class="hbtn" id="hNext">›</button>
+  <button class="hbtn exit" id="hExit">✕</button>
 </div>
 
 <script>
-/* ---------- 页面清单：图片类用截图，落地页用 HTML 现画 ---------- */
-const SHOTS = "../screenshots/";
-const SCREENS = [
-  {
-    id: "landing", group: "产品页", name: "落地页（免登录）", device: "desktop", kind: "landing",
-    goal: "第一次进来的人 10 秒内知道这是什么、能干什么。",
-    points: ["大图 + 渐变蒙层保证白字可读", "导航区分登录态：未登录显示登录/注册", "主 CTA 直接进登录，次 CTA 看菜谱"],
-    hotspots: []
-  },
-  {
-    id: "login", group: "产品页", name: "登录 / 注册", device: "desktop", src: SHOTS + "01-login.png",
-    goal: "一个页面承载登录与注册，减少跳转。",
-    points: ["Tab 切换登录/注册，无需跳页", "错误提示统一为「用户名或密码错误」，防账号枚举", "登录按钮 10 次/分钟限流"],
-    hotspots: [
-      { x: 61.8, y: 61.6, w: 26.4, h: 4.4, to: "chat", label: "登录 → 对话页" },
-      { x: 75.0, y: 42.0, w: 13.2, h: 4.4, to: "login", label: "切到注册（同页 Tab）" }
-    ]
-  },
-  {
-    id: "chat", group: "核心流程", name: "AI 对话", device: "desktop", src: SHOTS + "02-chat.png",
-    goal: "主场景：说一句或传张照片，拿到可执行的做法。",
-    points: ["SSE 流式输出，逐字出现", "先查本地菜谱库（相似度≥0.55），未命中才联网", "左侧会话列表，可新建/切换/删除"],
-    hotspots: [
-      { x: 0.8, y: 14.4, w: 14.1, h: 4.9, to: "pantry", label: "我的库存" },
-      { x: 0.8, y: 20.0, w: 14.1, h: 4.9, to: "recipes", label: "发现菜谱" },
-      { x: 38.5, y: 90.6, w: 54.7, h: 3.7, to: "chat", label: "输入框（原型不接后端）" }
-    ]
-  },
-  {
-    id: "pantry", group: "核心流程", name: "我的库存", device: "desktop", src: SHOTS + "03-pantry.png",
-    goal: "把冰箱里的东西记下来，才知道能做什么。",
-    points: ["单位只用 7 种精确单位，个/条/片 按平均重量折算", "同名食材原子 upsert，并发不丢数量", "概览卡汇总在库数量与总重量"],
-    hotspots: [
-      { x: 78.2, y: 32.0, w: 7.4, h: 3.6, to: "add", label: "添加食材 → 弹窗" },
-      { x: 0.8, y: 20.0, w: 14.1, h: 4.9, to: "recipes", label: "发现菜谱" }
-    ]
-  },
-  {
-    id: "add", group: "核心流程", name: "添加食材（弹窗）", device: "desktop", src: SHOTS + "05-add-ingredient.png",
-    goal: "录入要快：输一个字就出候选，选中自动带单位。",
-    points: ["联想下拉带缩略图、分类、常用单位", "只输「鸡」也能预览到「鸡蛋」", "单位下拉只有 7 个合法值"],
-    hotspots: [
-      { x: 30.0, y: 37.0, w: 40.0, h: 45.0, to: "pantry", label: "关闭 / 保存 → 回到库存" }
-    ]
-  },
-  {
-    id: "recipes", group: "核心流程", name: "发现菜谱", device: "desktop", src: SHOTS + "04-recipes.png",
-    goal: "没有明确想吃的，就逛一逛。",
-    points: ["瀑布流卡片，真实菜品图 + 难度 + 食材标签", "搜索走字面匹配（转义 % 与 _）", "卡片可收藏、可查看做法"],
-    hotspots: [
-      { x: 22.6, y: 17.2, w: 22.8, h: 28.9, to: "chat", label: "看菜谱 → 回到对话询问" },
-      { x: 0.8, y: 8.9, w: 14.1, h: 4.9, to: "chat", label: "AI 对话" }
-    ]
-  },
-  {
-    id: "m-chat", group: "移动端", name: "对话（移动）", device: "mobile", src: SHOTS + "06-mobile-chat.png",
-    goal: "手机上单手用：底部 Tab 切换三大功能。",
-    points: ["会话切换收进左侧抽屉", "顶栏显示当前会话标题", "输入区随键盘上移"],
-    hotspots: [
-      { x: 33.3, y: 93.5, w: 33.3, h: 6.5, to: "m-pantry", label: "库存 Tab" },
-      { x: 66.7, y: 93.5, w: 33.3, h: 6.5, to: "m-recipes", label: "发现 Tab" },
-      { x: 3.1, y: 1.2, w: 8.7, h: 4.0, to: "m-chat", label: "会话抽屉（原型未展开）" }
-    ]
-  },
-  {
-    id: "m-pantry", group: "移动端", name: "库存（移动）", device: "mobile", src: SHOTS + "08-mobile-pantry.png",
-    goal: "在超市/厨房边看边记。",
-    points: ["行卡信息压缩为 图 + 名称 + 数量折算", "操作按钮常显，不依赖 hover", "概览卡在首屏顶部"],
-    hotspots: [
-      { x: 33.3, y: 93.5, w: 33.3, h: 6.5, to: "m-chat", label: "对话 Tab" },
-      { x: 66.7, y: 93.5, w: 33.3, h: 6.5, to: "m-recipes", label: "发现 Tab" }
-    ]
-  },
-  {
-    id: "m-recipes", group: "移动端", name: "发现（移动）", device: "mobile", src: SHOTS + "07-mobile-recipes.png",
-    goal: "滑动浏览，两列瀑布流。",
-    points: ["两列瀑布流，图片懒加载", "顶部搜索常驻", "底部 Tab 保持可达"],
-    hotspots: [
-      { x: 33.3, y: 93.5, w: 33.3, h: 6.5, to: "m-pantry", label: "库存 Tab" },
-      { x: 0.0, y: 93.5, w: 33.3, h: 6.5, to: "m-chat", label: "对话 Tab" }
-    ]
-  }
+const A = "assets/";
+
+const SIDE = (active) => `
+  <div class="side">
+    <div class="logo"><div class="mark">🍳</div><div><div class="lname">AI 私厨</div><div class="lslogan">你的私人厨师</div></div></div>
+    <div class="menu">
+      <div class="mi ${active === 'chat' ? 'on' : ''}" data-go="chat"><span class="ic">💬</span>AI 对话</div>
+      <div class="mi ${active === 'pantry' ? 'on' : ''}" data-go="pantry"><span class="ic">🧺</span>我的库存</div>
+      <div class="mi ${active === 'disc' ? 'on' : ''}" data-go="disc"><span class="ic">🧭</span>发现菜谱</div>
+    </div>
+    <div class="foot"><div class="ava">管</div><div><div class="uname">管理员</div><div class="usub">已登录</div></div></div>
+  </div>`;
+
+const TABBAR = (active) => `
+  <div class="tabbar">
+    <div class="t ${active === 'chat' ? 'on' : ''}" data-go="m-chat"><b>💬</b>对话</div>
+    <div class="t ${active === 'pantry' ? 'on' : ''}" data-go="m-pantry"><b>🧺</b>库存</div>
+    <div class="t ${active === 'disc' ? 'on' : ''}" data-go="m-disc"><b>🧭</b>发现</div>
+  </div>`;
+
+/* 落地页 */
+const landing = () => `
+<div class="landing">
+  <img class="bg" src="${A}r30.jpg" alt="">
+  <div class="scrim"></div>
+  <nav>
+    <div class="logo"><span>🍳</span> AI 私厨</div>
+    <a>功能</a><a>菜谱库</a><a>关于</a>
+    <span class="sp"></span>
+    <a data-go="login">登录</a>
+    <span class="pill" data-go="login">免费注册</span>
+  </nav>
+  <div class="hero">
+    <span class="kicker">AI CHEF · 私人厨师</span>
+    <h1>冰箱里有什么，<br>就做什么。<em>拍张照就行。</em></h1>
+    <p class="sub">告诉我你有什么食材，或者直接拍一张冰箱的照片。我会优先从 123 道菜谱里找最合适的做法，找不到再联网，最后给你一份带克数、步骤和营养的清单。</p>
+    <div class="cta">
+      <button class="btn-main" data-go="login">开始做饭</button>
+      <button class="btn-ghost" data-go="disc">先看看菜谱</button>
+    </div>
+    <div class="cards">
+      <div class="c"><b>拍照识食材</b><small>一张冰箱照片，自动认出里面有什么</small></div>
+      <div class="c"><b>按库存推荐</b><small>只用手头有的东西，不让你再跑一趟超市</small></div>
+      <div class="c"><b>记住你的口味</b><small>做完打分，下次推荐更准</small></div>
+    </div>
+  </div>
+</div>`;
+
+/* 登录 / 注册 */
+const login = () => `
+<div class="login" id="loginScreen">
+  <div class="box">
+    <div class="logo-row"><div class="mark">🍳</div><div><div class="title">AI 私厨</div><div class="sl">你的私人厨师</div></div></div>
+    <div class="panel card">
+      <div class="tabs"><div class="tab on" id="tabLogin">登录</div><div class="tab" id="tabReg">注册</div></div>
+      <div class="login-form">
+        <div class="field"><label>用户名</label><div class="inp solid">admin</div></div>
+        <div class="field"><label>密码</label><div class="inp">••••••••</div></div>
+        <button class="submit" data-go="chat">登 录</button>
+        <div class="tip">登录即表示同意《用户协议》与《隐私政策》</div>
+      </div>
+      <div class="reg">
+        <div class="field"><label>用户名</label><div class="inp">2–50 个字符</div></div>
+        <div class="field"><label>密码</label><div class="inp">至少 6 位</div></div>
+        <div class="field"><label>昵称（可选）</label><div class="inp">怎么称呼你</div></div>
+        <button class="submit" data-go="chat">注 册 并 登 录</button>
+        <div class="tip">同 IP 每分钟最多注册 10 次</div>
+      </div>
+    </div>
+  </div>
+</div>`;
+
+/* 对话 */
+const chat = (m) => `
+<div class="app ${m ? 'm' : ''}">
+  ${m ? '' : SIDE('chat')}
+  <div class="chat">
+    ${m ? `<div class="mbar"><div class="b">☰</div><div class="t2">西红柿炒鸡蛋怎么做</div><div class="b">＋</div></div>` : ''}
+    <div class="msgs">
+      <div class="msg me"><div class="bd"><div class="bubble">西红柿炒鸡蛋怎么做</div></div></div>
+      <div class="msg">
+        <div class="av">👨‍🍳</div>
+        <div class="bd"><div class="bubble">
+          <p>我先查一下本地菜谱库里有没有这道经典家常菜～找到啦！本地菜谱库里有一道<strong>番茄炒蛋</strong>（相似度 0.73），正是你要的那道国民下饭菜 👇</p>
+          <div class="h">🍅 番茄炒蛋</div>
+          <p class="kv"><strong>难度</strong>：简单 ⭐　<strong>用时</strong>：约 10 分钟</p>
+          <p style="margin-top:6px"><strong>食材</strong></p>
+          <ul>
+            <li>番茄 2 个（约 300g）</li>
+            <li>鸡蛋 3 个</li>
+            <li>小葱 1 根</li>
+            <li>盐、白糖少许，食用油</li>
+          </ul>
+          <p><strong>做法</strong></p>
+          <ol>
+            <li>番茄顶部划十字，开水烫 30 秒去皮，切滚刀块；鸡蛋加一小撮盐和一勺清水打散。</li>
+            <li>热锅多放油，六成热倒入蛋液，边缘凝固后轻推成块，盛出备用。</li>
+            <li>锅留底油，下番茄中火炒 2–3 分钟压出汁水，加半勺白糖提鲜、少许盐调味。</li>
+            <li>倒回鸡蛋翻匀，快速翻炒 30 秒，让蛋吸饱汤汁。</li>
+            <li>撒葱花出锅。</li>
+          </ol>
+          <p style="margin-top:6px"><strong>小贴士</strong></p>
+          <ul>
+            <li>番茄要炒到「出沙」才好吃；番茄偏硬可加两勺水焖 1 分钟。</li>
+            <li>想要下饭，最后可以点一点薄芡，汤汁更挂勺。</li>
+          </ul>
+        </div></div>
+      </div>
+    </div>
+    <div class="input">
+      <div class="ibox"><div class="icon-btn">🖼</div><div class="ph">问我做什么菜…（Enter 发送）</div><div class="send">↑</div></div>
+      <div class="hint">AI 可能会出错，请注意食材安全与过敏原</div>
+    </div>
+    ${m ? TABBAR('chat') : ''}
+  </div>
+</div>`;
+
+/* 库存 */
+const PANTRY_ROWS = [
+  ["i-tomat", "番茄", "3 个", "≈ 600g"],
+  ["i-egg", "鸡蛋", "6 个", "≈ 300g"],
+  ["i-fish", "鲈鱼", "1 条", "≈ 600g"],
+  ["i-rice", "大米", "5000 g", ""],
+  ["i-milk", "牛奶", "500 毫升", ""],
 ];
 
-/* 落地页背景图（复用项目里的菜品实拍图） */
-const HERO_IMG = "../../frontend/public/recipe-images/30.jpg";
+const ADD_MODAL = `
+  <div class="mask">
+    <div class="modal">
+      <h3>添加食材</h3>
+      <div class="preview">
+        <img src="${A}i-egg.jpg" alt="">
+        <div><b>鸡蛋</b><small>肉蛋 · 按平均大小：1 个 ≈ 50g</small></div>
+      </div>
+      <div class="f">
+        <label>名称</label>
+        <div class="inp">鸡<span class="caret"></span></div>
+        <div class="sug">
+          <div class="it on"><img src="${A}i-egg.jpg"><span>鸡蛋<br><small>肉蛋 · 常用单位 个</small></span></div>
+          <div class="it"><img src="${A}i-fish.jpg"><span>鸡胸肉<br><small>肉蛋 · 常用单位 块</small></span></div>
+          <div class="it"><img src="${A}i-potato.jpg"><span>鸡腿<br><small>肉蛋 · 常用单位 个</small></span></div>
+        </div>
+      </div>
+      <div class="f"><label>数量</label><div class="inp">6<span style="color:#2fb37a;margin-left:10px;font-size:11px">≈ 300g</span></div></div>
+      <div class="f"><label>单位</label><div class="inp">个 ▾</div></div>
+      <div class="f"><label>备注</label><div class="inp" style="color:#93a3bc">可选，如：冷藏、周三到期</div></div>
+      <div class="foot"><button class="btn2" data-go="pantry">取消</button><button class="btn2 pri" data-go="pantry">保存</button></div>
+    </div>
+  </div>`;
+
+const pantry = (m, withModal) => `
+<div class="app ${m ? 'm' : ''}">
+  ${m ? '' : SIDE('pantry')}
+  <div class="pantry">
+    ${m ? `<div class="mbar"><div class="b">☰</div><div class="t2">我的库存</div><div class="b">＋</div></div>` : ''}
+    <div class="ov card">
+      <div class="num">5<span> 种</span></div>
+      <div class="lb">在库食材 · 估算总重 6.5kg</div>
+      <div class="metrics">
+        <div class="m" style="color:#2fb37a"><span class="ring"></span><b>&nbsp;5</b> 在库</div>
+        <div class="m" style="color:#3d7fff"><span class="ring"></span><b>&nbsp;2</b> 已消耗</div>
+        <div class="m" style="color:#f2a33c"><span class="ring"></span><b>&nbsp;1</b> 含备注</div>
+      </div>
+      <div class="tip2">✨ 食材充足，去「AI 对话」问一句今天吃什么吧</div>
+    </div>
+    <div class="phead">
+      <div><h2>我的库存</h2><p>单位按平均大小自动折算重量</p></div>
+      <div class="acts">
+        <div class="switch"><span class="sw"></span>显示已消耗</div>
+        <button class="btn" data-go="${m ? 'm-add' : 'add'}">＋ 添加食材</button>
+      </div>
+    </div>
+    <div class="rows">
+      ${PANTRY_ROWS.map(([img, name, qty, est]) => `
+        <div class="row">
+          <div class="thumb"><img src="${A}${img}.jpg" alt=""></div>
+          <div><div class="nm">${name}</div><div class="qty">${qty}${est ? `<em>${est}</em>` : ''}</div></div>
+          <div class="pillst"><i></i>在库</div>
+          <div class="ops"><span>✏️</span><span>✅</span><span>🗑️</span></div>
+        </div>`).join('')}
+    </div>
+  </div>
+  ${m ? TABBAR('pantry') : ''}
+  ${withModal ? ADD_MODAL : ''}
+</div>`;
+
+/* 发现 */
+const DISHES = [
+  ["r1", "番茄炒蛋", "简单 · 10 分钟", ["番茄", "鸡蛋"], "家常菜"],
+  ["r3", "青椒土豆丝", "简单 · 15 分钟", ["土豆", "青椒"], "家常菜"],
+  ["r21", "虎皮青椒", "简单 · 12 分钟", ["青椒", "蒜"], "湘菜"],
+  ["r35", "糖醋排骨", "中等 · 40 分钟", ["排骨", "糖", "醋"], "淮扬菜"],
+  ["r50", "宫保鸡丁", "中等 · 25 分钟", ["鸡胸肉", "花生"], "川菜"],
+  ["r66", "蛋炒饭", "简单 · 8 分钟", ["米饭", "鸡蛋"], "主食"],
+  ["r78", "蜜汁叉烧", "较难 · 90 分钟", ["梅花肉", "蜂蜜"], "粤菜"],
+  ["r6", "家常豆腐", "简单 · 15 分钟", ["豆腐", "青椒"], "家常菜"],
+  ["r30", "辣子鸡", "中等 · 30 分钟", ["鸡腿", "干辣椒"], "川菜"],
+];
+
+const disc = (m) => `
+<div class="app ${m ? 'm' : ''}">
+  ${m ? '' : SIDE('disc')}
+  <div class="disc">
+    ${m ? `<div class="mbar"><div class="b">☰</div><div class="t2">发现菜谱</div><div class="b">🔍</div></div>` : ''}
+    <div class="masthead">
+      <div><div class="eyebrow">KITCHEN EXHIBITION</div><h1>厨房展览</h1><p>123 道菜，来自家常与八大菜系</p></div>
+      <div class="search"><div class="inp">🔍 搜菜名或食材</div><button class="btn sm">搜索</button></div>
+    </div>
+    <div class="chips">
+      <span class="chip on">全部</span><span class="chip">家常菜</span><span class="chip">川菜</span>
+      <span class="chip">粤菜</span><span class="chip">汤羹</span><span class="chip">主食</span>
+    </div>
+    <div class="grid3">
+      ${DISHES.slice(0, m ? 6 : 9).map(([f, n, meta, tags, cat]) => `
+        <div class="dish" data-go="chat">
+          <div class="cover"><img src="${A}${f}.jpg" alt=""><span class="badge">${cat}</span><span class="fav">♡</span></div>
+          <div class="bd"><h4>${n}</h4><div class="meta">${meta}</div>
+            <div class="tags">${tags.map((t) => `<span>${t}</span>`).join('')}</div></div>
+        </div>`).join('')}
+    </div>
+  </div>
+  ${m ? TABBAR('disc') : ''}
+</div>`;
+
+/* 注册表 */
+const SCREENS = [
+  { id: "landing", group: "产品页", name: "落地页（免登录）", device: "desktop", build: landing,
+    goal: "第一次进来的人 10 秒内知道这是什么、能干什么。",
+    points: ["大图 + 渐变蒙层，白字在任何照片上都可读", "导航按登录态切换：未登录显示登录/注册", "主 CTA 进登录，次 CTA 直接看菜谱"] },
+  { id: "login", group: "产品页", name: "登录 / 注册", device: "desktop", build: login,
+    goal: "一个页面承载登录与注册，错误提示统一，防账号枚举。",
+    points: ["Tab 切换登录与注册，共用一张卡片（可点）", "两个表单字段不同，但提交后都进对话页", "登录/注册均 10 次/分钟限流"] },
+  { id: "chat", group: "核心流程", name: "AI 对话", device: "desktop", build: () => chat(false),
+    goal: "主场景：说一句话或传张照片，拿到可直接执行的做法。",
+    points: ["回答结构化：菜名/难度/用时/食材/步骤/小贴士", "先查本地库（≥0.55），未命中才联网搜索", "左侧会话列表支持新建、切换、删除"] },
+  { id: "pantry", group: "核心流程", name: "我的库存", device: "desktop", build: () => pantry(false, false),
+    goal: "把冰箱里有的东西记下来，才知道今天能做什么。",
+    points: ["7 种精确单位；个/条/片 按平均重量折算克数", "同名食材原子 upsert，并发不丢数量", "概览卡汇总在库种类与总重量"] },
+  { id: "add", group: "核心流程", name: "添加食材（弹窗）", device: "desktop", build: () => pantry(false, true),
+    goal: "录入要快：输一个字就出候选，选中自动带单位。",
+    points: ["联想项带缩略图、分类、常用单位", "只输「鸡」也能匹配到「鸡蛋」", "单位下拉只有 7 个合法值"] },
+  { id: "disc", group: "核心流程", name: "发现菜谱", device: "desktop", build: () => disc(false),
+    goal: "没有明确想吃的，就逛一逛，用真实菜品图建立食欲。",
+    points: ["卡片：图片 + 分类角标 + 难度用时 + 食材标签", "搜索走字面匹配，转义 % 与 _", "点卡片回到对话让 AI 讲做法"] },
+  { id: "m-chat", group: "移动端", name: "对话（移动）", device: "mobile", build: () => chat(true),
+    goal: "手机上单手使用：底部 Tab 切换三大功能。",
+    points: ["会话切换收进左侧抽屉，顶栏显示标题", "气泡最大宽度 80%，避免顶满屏", "输入区避让底部 Tab"] },
+  { id: "m-pantry", group: "移动端", name: "库存（移动）", device: "mobile", build: () => pantry(true, false),
+    goal: "在超市或厨房边看边记。",
+    points: ["行卡压缩为缩略图 + 名称 + 折算", "操作按钮常显，不依赖 hover", "概览卡保留在首屏"] },
+  { id: "m-add", group: "移动端", name: "添加食材（移动）", device: "mobile", build: () => pantry(true, true),
+    goal: "单手录入：键盘上方就能完成选择。",
+    points: ["弹窗宽度自适应，不超出屏幕", "联想列表最多 3–5 条，便于点击", "保存后回到库存列表"] },
+  { id: "m-disc", group: "移动端", name: "发现（移动）", device: "mobile", build: () => disc(true),
+    goal: "滑动浏览，两列瀑布流。",
+    points: ["两列网格，图片懒加载", "搜索与分类常驻首屏", "底部 Tab 保持可达"] },
+];
 
 const DESKTOP = { w: 1440, h: 900 };
 const MOBILE = { w: 390, h: 844 };
+let idx = 0, zoomMode = "fit";
 
-let idx = 0;
-let zoomMode = "fit";   // fit | real
 const stage = document.getElementById("stage");
 const navEl = document.getElementById("nav");
 const notesEl = document.getElementById("notes");
 const crumb = document.getElementById("crumb");
 const devTag = document.getElementById("devTag");
 
-/* ---------- 左侧列表 ---------- */
 function buildNav() {
-  let html = "", lastGroup = "";
+  let html = "", last = "";
   SCREENS.forEach((s, i) => {
-    if (s.group !== lastGroup) {
-      html += `<div class="group">${s.group}</div>`;
-      lastGroup = s.group;
-    }
+    if (s.group !== last) { html += `<div class="group">${s.group}</div>`; last = s.group; }
     html += `<button data-i="${i}"><i>${String(i + 1).padStart(2, "0")}</i>${s.name}</button>`;
   });
   navEl.innerHTML = html;
-  navEl.querySelectorAll("button").forEach((b) => {
-    b.addEventListener("click", () => go(Number(b.dataset.i)));
-  });
+  navEl.querySelectorAll("button").forEach((b) => b.addEventListener("click", () => go(+b.dataset.i)));
 }
 
-/* ---------- 渲染 ---------- */
 function go(i) {
   idx = Math.max(0, Math.min(SCREENS.length - 1, i));
   const s = SCREENS[idx];
   const size = s.device === "mobile" ? MOBILE : DESKTOP;
-
-  // 舞台可用尺寸 → 计算缩放
-  const pad = 48;
   const inPresent = document.body.classList.contains("present");
-  const hudSpace = inPresent ? 62 : 0;   // 给底部控制条留位置，避免压住页面内容
+  const pad = 44, chromeH = s.device === "mobile" ? 16 : 28;
   const availW = stage.clientWidth - pad;
-  const availH = stage.clientHeight - pad - hudSpace;
-  const chromeH = s.device === "mobile" ? 16 : 30;   // 外框占位
-  const fit = Math.min(availW / size.w, (availH - chromeH) / size.h, 1);
-  const scale = zoomMode === "real" ? 1 : fit;
-  stage.style.padding = zoomMode === "real" ? "24px" : "24px";
+  const availH = stage.clientHeight - pad - (inPresent ? 58 : 0) - chromeH;
+  const scale = zoomMode === "real" ? 1 : Math.min(availW / size.w, availH / size.h, 1);
 
-  const inner = s.kind === "landing" ? landingHTML(size) : `<img src="${s.src}" alt="${s.name}">`;
+  const inner = `<div style="width:${size.w}px;height:${size.h}px;overflow:hidden;position:relative">${s.build()}</div>`;
 
-  const hotspots = (s.hotspots || []).map((h) => {
-    const to = SCREENS.findIndex((x) => x.id === h.to);
-    return `<div class="hotspot" data-to="${to}" data-label="${h.label}"
-      style="left:${h.x}%;top:${h.y}%;width:${h.w}%;height:${h.h}%"></div>`;
-  }).join("");
+  stage.innerHTML = s.device === "mobile"
+    ? `<div class="frame-wrap" style="width:${size.w * scale}px;height:${size.h * scale}px">
+         <div class="phone" style="width:${size.w}px;height:${size.h}px;transform:scale(${scale});transform-origin:top left">${inner}</div>
+       </div>`
+    : `<div class="frame-wrap" style="width:${size.w * scale}px;height:${(size.h + chromeH) * scale}px">
+         <div class="browser" style="width:${size.w}px;height:${size.h + chromeH}px;transform:scale(${scale});transform-origin:top left">
+           <div class="bar">
+             <span class="dot" style="background:#ff5f57"></span><span class="dot" style="background:#febc2e"></span><span class="dot" style="background:#28c840"></span>
+             <span class="addr">localhost:8080/${s.id === "landing" ? "" : s.id.replace("m-", "")}</span>
+           </div>
+           <div style="position:relative;width:${size.w}px;height:${size.h}px;background:#fff">${inner}</div>
+         </div>
+       </div>`;
 
-  if (s.device === "mobile") {
-    stage.innerHTML = `
-      <div class="frame-wrap" style="width:${size.w * scale}px;height:${size.h * scale}px">
-        <div class="phone" style="width:${size.w}px;height:${size.h}px;transform:scale(${scale});transform-origin:top left">
-          ${inner}${hotspots}
-        </div>
-      </div>`;
-  } else {
-    stage.innerHTML = `
-      <div class="frame-wrap" style="width:${size.w * scale}px;height:${(size.h + chromeH) * scale}px">
-        <div class="browser" style="width:${size.w}px;height:${size.h + chromeH}px;transform:scale(${scale});transform-origin:top left">
-          <div class="bar">
-            <span class="dot" style="background:#ff5f57"></span>
-            <span class="dot" style="background:#febc2e"></span>
-            <span class="dot" style="background:#28c840"></span>
-            <span class="addr">localhost:8080${s.id === "landing" ? "/" : "/" + s.id}</span>
-          </div>
-          <div style="position:relative;width:${size.w}px;height:${size.h}px;background:#fff">
-            ${inner}${hotspots}
-          </div>
-        </div>
-      </div>`;
+  // 登录页 Tab 切换
+  const tl = stage.querySelector("#tabLogin"), tr = stage.querySelector("#tabReg");
+  if (tl && tr) {
+    const scr = stage.querySelector("#loginScreen");
+    tl.onclick = () => { scr.classList.remove("reg-mode"); tl.classList.add("on"); tr.classList.remove("on"); };
+    tr.onclick = () => { scr.classList.add("reg-mode"); tr.classList.add("on"); tl.classList.remove("on"); };
   }
 
-  stage.querySelectorAll(".hotspot").forEach((el) => {
-    el.addEventListener("click", () => go(Number(el.dataset.to)));
-  });
-
-  // 高亮列表 + 说明
-  navEl.querySelectorAll("button").forEach((b, i) => b.classList.toggle("on", i === idx));
+  navEl.querySelectorAll("button").forEach((b, k) => b.classList.toggle("on", k === idx));
   crumb.textContent = s.name;
+  devTag.textContent = s.device === "mobile" ? "390 × 844" : "1440 × 900";
   document.getElementById("hIdx").textContent = idx + 1;
   document.getElementById("hTotal").textContent = SCREENS.length;
   document.getElementById("hName").textContent = s.name;
-  devTag.textContent = s.device === "mobile" ? "390 × 844" : "1440 × 900";
   notesEl.innerHTML = `
     <h3>${s.name}</h3>
     <div class="row"><span>这个页面解决什么</span><p>${s.goal}</p></div>
     <div class="row"><span>设计要点</span><ul>${s.points.map((p) => `<li>${p}</li>`).join("")}</ul></div>
-    <div class="hint">虚线区域为可点击热区，按 <b>H</b> 常显；<b>←</b> <b>→</b> 切换页面。</div>`;
+    <div class="hint">页面为真 HTML（非截图），按钮可直接点；<b>←</b> <b>→</b> 翻页，<b>H</b> 显示可点区域。</div>`;
 }
 
-/* ---------- 落地页 HTML ---------- */
-function landingHTML(size) {
-  return `
-  <div class="landing" style="width:${size.w}px;height:${size.h}px">
-    <img class="bg" src="${HERO_IMG}" alt="">
-    <div class="scrim"></div>
-    <nav>
-      <div class="logo"><span>🍳</span> AI 私厨</div>
-      <a href="#" onclick="return false">功能</a>
-      <a href="#" onclick="return false">菜谱库</a>
-      <a href="#" onclick="return false">关于</a>
-      <span class="sp"></span>
-      <a class="ghost" href="#" onclick="return false">登录</a>
-      <a class="pill" href="#" onclick="return false">免费注册</a>
-    </nav>
-    <div class="hero">
-      <span class="tag">AI CHEF · 私人厨师</span>
-      <h1>冰箱里有什么，<br>就做什么。<em>拍张照就行。</em></h1>
-      <p class="sub">告诉我你有什么食材，或者直接拍一张冰箱的照片。我会优先从 123 道菜谱里找最合适的做法，找不到再联网，最后给你一份带克数、步骤和营养的清单。</p>
-      <div class="cta">
-        <button class="btn-main">开始做饭</button>
-        <button class="btn-ghost">先看看菜谱</button>
-      </div>
-      <div class="cards">
-        <div class="card"><b>拍照识食材</b><small>一张冰箱照片，自动认出里面有什么</small></div>
-        <div class="card"><b>按库存推荐</b><small>只用手头有的东西，不让你再去买菜</small></div>
-        <div class="card"><b>记住你的口味</b><small>做完打分，下次推荐更准</small></div>
-      </div>
-    </div>
-  </div>`;
-}
+/* 点击跳转 */
+stage.addEventListener("click", (e) => {
+  const el = e.target.closest("[data-go]");
+  if (!el) return;
+  const to = SCREENS.findIndex((x) => x.id === el.dataset.go);
+  if (to >= 0) go(to);
+});
 
-/* ---------- 交互 ---------- */
+/* 缩放 + 演示 */
+const zFit = document.getElementById("zFit"), zReal = document.getElementById("zReal");
+function setZoom(mode) {
+  zoomMode = mode;
+  zFit.classList.toggle("on", mode === "fit");
+  zReal.classList.toggle("on", mode === "real");
+  go(idx);
+}
+zFit.onclick = () => setZoom("fit");
+zReal.onclick = () => setZoom("real");
+
+function setPresent(on) {
+  document.body.classList.toggle("present", on);
+  document.getElementById("presentBtn").textContent = on ? "退出演示" : "▶ 演示模式";
+  requestAnimationFrame(() => go(idx));
+}
+document.getElementById("presentBtn").onclick = () => setPresent(!document.body.classList.contains("present"));
+document.getElementById("hPrev").onclick = () => go(idx - 1);
+document.getElementById("hNext").onclick = () => go(idx + 1);
+document.getElementById("hExit").onclick = () => setPresent(false);
+
 document.addEventListener("keydown", (e) => {
   if (e.key === "ArrowRight") go(idx + 1);
   else if (e.key === "ArrowLeft") go(idx - 1);
@@ -448,48 +677,8 @@ document.addEventListener("keydown", (e) => {
   else if (e.key === "p" || e.key === "P") setPresent(!document.body.classList.contains("present"));
   else if (e.key === "Escape") setPresent(false);
 });
-
-// 落地页里的按钮热区（纯 HTML 页，单独绑定）
-stage.addEventListener("click", (e) => {
-  const t = e.target;
-  if (t.classList.contains("btn-main") || t.classList.contains("pill")) {
-    go(SCREENS.findIndex((s) => s.id === "login"));
-  } else if (t.classList.contains("btn-ghost")) {
-    go(SCREENS.findIndex((s) => s.id === "recipes"));
-  } else if (t.classList.contains("ghost")) {
-    go(SCREENS.findIndex((s) => s.id === "login"));
-  }
-});
-
-/* ---------- 演示模式 ---------- */
-function setPresent(on) {
-  document.body.classList.toggle("present", on);
-  document.getElementById("presentBtn").textContent = on ? "退出演示" : "▶ 演示模式";
-  // 演示时隐藏热区虚线，避免干扰演示；仍可点击跳转
-  if (on) document.body.classList.remove("show-zones");
-  // 进入演示后需要重新计算缩放（容器尺寸变了）
-  requestAnimationFrame(() => go(idx));
-}
-
-document.getElementById("presentBtn").addEventListener("click", () => {
-  setPresent(!document.body.classList.contains("present"));
-});
-document.getElementById("hPrev").addEventListener("click", () => go(idx - 1));
-document.getElementById("hNext").addEventListener("click", () => go(idx + 1));
-document.getElementById("hExit").addEventListener("click", () => setPresent(false));
-
-const zFit = document.getElementById("zFit");
-const zReal = document.getElementById("zReal");
-function setZoom(mode) {
-  zoomMode = mode;
-  zFit.classList.toggle("on", mode === "fit");
-  zReal.classList.toggle("on", mode === "real");
-  go(idx);
-}
-zFit.addEventListener("click", () => setZoom("fit"));
-zReal.addEventListener("click", () => setZoom("real"));
-
 window.addEventListener("resize", () => go(idx));
+
 buildNav();
 go(0);
 </script>
