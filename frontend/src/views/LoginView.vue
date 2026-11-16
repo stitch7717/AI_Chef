@@ -91,7 +91,7 @@
 <script setup>
 import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
-import { ElMessage } from 'element-plus'
+import ElMessage from 'element-plus/es/components/message'
 import { User, Lock, Postcard } from '@element-plus/icons-vue'
 import { api, errMsg } from '../api'
 import { useAuthStore } from '../stores/auth'

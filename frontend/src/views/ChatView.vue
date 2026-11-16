@@ -45,6 +45,22 @@
             <div class="text">{{ m.content }}</div>
           </div>
         </div>
+        <!-- 模型不可用时的本地 RAG 兜底（业务降级：页面不空白） -->
+        <div v-if="fallbackRecipes.length" class="msg assistant">
+          <div class="avatar">👨‍🍳</div>
+          <div class="bubble fallback">
+            <div class="fb-title">{{ fallbackTitle }}</div>
+            <div class="fb-cards">
+              <button v-for="r in fallbackRecipes" :key="r.name" class="fb-card"
+                      @click="pickFallback(r.name)">
+                <span class="fb-name">{{ r.name }}</span>
+                <span class="fb-diff">{{ r.difficulty }}</span>
+              </button>
+            </div>
+            <div class="fb-hint">点一道菜，我帮你说说怎么做</div>
+          </div>
+        </div>
+
         <!-- 流式中的消息 -->
         <div v-if="streaming" class="msg assistant">
           <div class="avatar">👨‍🍳</div>
@@ -99,7 +115,8 @@
 
 <script setup>
 import { ref, computed, onMounted, nextTick } from 'vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import ElMessage from 'element-plus/es/components/message'
+import ElMessageBox from 'element-plus/es/components/message-box'
 import { Delete, Close, Picture, Plus, Promotion } from '@element-plus/icons-vue'
 import { api, streamChat, uploadImage, errMsg } from '../api'
 
@@ -113,6 +130,22 @@ const pendingImage = ref('')
 const uploading = ref(false)
 const msgBox = ref(null)
 const drawer = ref(false)
+const fallbackRecipes = ref([])
+const fallbackReason = ref('')
+
+const FALLBACK_TITLE = {
+  quota: 'AI 暂时没法生成（额度不足），先看这几道',
+  auth: 'AI 服务配置异常，先看这几道',
+  busy: 'AI 有点忙，先看这几道',
+  timeout: 'AI 响应超时，先看这几道',
+  unknown: 'AI 暂时不可用，先看这几道',
+}
+const fallbackTitle = computed(() => FALLBACK_TITLE[fallbackReason.value] || FALLBACK_TITLE.unknown)
+
+function pickFallback(name) {
+  input.value = `「${name}」怎么做？`
+  fallbackRecipes.value = []
+}
 
 const currentTitle = computed(() => {
   const s = sessions.value.find((x) => x.id === currentId.value)
@@ -197,10 +230,17 @@ async function send() {
   pendingImage.value = ''
   streaming.value = true
   streamText.value = ''
+  fallbackRecipes.value = []
+  fallbackReason.value = ''
   scrollBottom()
 
   await streamChat(currentId.value, { message: text || '帮我看看这张图里有什么食材', image_url: img || null }, {
     onToken(t) { streamText.value += t; scrollBottom() },
+    onFallback(data) {
+      fallbackRecipes.value = data.recipes || []
+      fallbackReason.value = data.reason || 'unknown'
+      scrollBottom()
+    },
     onDone() {
       streaming.value = false
       messages.value.push({ id: Date.now() + 1, role: 'assistant', content: streamText.value, image_url: null })
@@ -316,6 +356,20 @@ async function send() {
   background: var(--danger); color: #fff; border-radius: 50%; padding: 2px; cursor: pointer;
 }
 .input-hint { text-align: center; font-size: 11px; color: var(--ink-400); margin-top: 8px; }
+
+/* 降级卡片 */
+.fallback { max-width: 460px; }
+.fb-title { font-size: 13px; color: var(--ink-600); margin-bottom: 10px; }
+.fb-cards { display: flex; gap: 8px; flex-wrap: wrap; }
+.fb-card {
+  display: flex; flex-direction: column; gap: 2px; align-items: flex-start;
+  padding: 8px 14px; border-radius: 12px; cursor: pointer;
+  border: 1px solid var(--ink-200); background: #fff; transition: all .15s;
+}
+.fb-card:hover { border-color: var(--brand-500); transform: translateY(-1px); }
+.fb-name { font-size: 13px; font-weight: 600; color: var(--ink-900); }
+.fb-diff { font-size: 11px; color: var(--ink-400); }
+.fb-hint { margin-top: 10px; font-size: 11px; color: var(--ink-400); }
 
 /* 移动端顶栏（桌面隐藏） */
 .mobile-bar { display: none; }

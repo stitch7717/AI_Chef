@@ -23,7 +23,7 @@ from fastapi.responses import JSONResponse
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 
-from app.api.v1.auth import limiter
+from app.core.ratelimit import limiter
 from app.api.v1 import auth, chat, favorites, feedbacks, oss, pantry, recipes, sessions
 from app.core.config import settings
 
@@ -120,9 +120,13 @@ app = create_app()
 @app.get("/health")
 async def health():
     """健康检查：供负载均衡/容器探针调用。"""
+    from app.core.ratelimit import LIMITER_BACKEND
+
     return {
         "status": "ok",
-        "app": "lc-course-pro",
+        "app": "AI 大厨 (AI Chef)",
         "jwt_set": settings.JWT_SECRET_KEY != "change-me",
         "llm_set": bool(settings.DEEPSEEK_API_KEY),
+        # 限流计数后端：redis = 多实例共享（业务级）；memory = 仅单进程
+        "ratelimit": LIMITER_BACKEND,
     }

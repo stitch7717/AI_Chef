@@ -99,7 +99,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { ElMessage } from 'element-plus'
+import ElMessage from 'element-plus/es/components/message'
 import { Search } from '@element-plus/icons-vue'
 import { api, errMsg } from '../api'
 

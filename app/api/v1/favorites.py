@@ -17,14 +17,9 @@ async def my_favorites(
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """我的收藏列表（直接返回菜谱详情，前端少一次关联查询）"""
-    favs = await recipe_repo.list_favorites(db, user.id)
-    result = []
-    for fav in favs:
-        recipe = await recipe_repo.get_by_id(db, fav.recipe_id)
-        if recipe:
-            result.append(RecipeOut.model_validate(recipe))
-    return result
+    """我的收藏列表（一条 JOIN 查完；原实现是循环 get_by_id，收藏越多越慢）"""
+    recipes = await recipe_repo.list_favorite_recipes(db, user.id)
+    return [RecipeOut.model_validate(r) for r in recipes]
 
 
 @router.post("/{recipe_id}", response_model=FavoriteOut, status_code=201)

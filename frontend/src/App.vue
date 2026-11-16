@@ -1,6 +1,15 @@
 <template>
-  <router-view />
+  <!-- 中文 locale：全量引入时期由 app.use(ElementPlus, { locale }) 提供，
+       按需引入后改由 ConfigProvider 在应用根部提供 -->
+  <el-config-provider :locale="zhCn">
+    <router-view />
+  </el-config-provider>
 </template>
+
+<script setup>
+import zhCn from 'element-plus/es/locale/lang/zh-cn'
+// el-config-provider 本身也由 unplugin-vue-components 按需注册
+</script>
 
 <style>
 /* ============ 全局设计系统「Orea 蓝白极简」 ============ */

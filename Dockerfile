@@ -22,4 +22,4 @@ ENV FASTEMBED_CACHE_DIR=/app/model_cache
 EXPOSE 8002
 
 # 启动序：数据库迁移 → 导入菜谱 → 起服务（均为幂等操作，可重复执行）
-CMD ["sh", "-c", "./.venv/bin/python -m alembic upgrade head && ./.venv/bin/python scripts/seed_recipes.py && ./.venv/bin/python -m uvicorn app.main:app --host 0.0.0.0 --port 8002 --proxy-headers --forwarded-allow-ips \"*\" --limit-concurrency 500"]
+CMD ["sh", "-c", "./.venv/bin/python -m alembic upgrade head && ./.venv/bin/python scripts/seed_recipes.py && ./.venv/bin/python -m uvicorn app.main:app --host 0.0.0.0 --port 8002 --proxy-headers --forwarded-allow-ips \"127.0.0.1,172.16.0.0/12,10.0.0.0/8,192.168.0.0/16\" --limit-concurrency 500"]

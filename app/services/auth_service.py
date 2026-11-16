@@ -5,6 +5,7 @@ Service ≈ Java 的 @Service 层：业务规则在这里，可以被多个 Rout
 """
 
 from fastapi import HTTPException, status
+from sqlalchemy.exc import IntegrityError
 
 from app.core.security import create_access_token, hash_password, verify_password
 from app.models.user import User
@@ -22,12 +23,18 @@ async def register(db: AsyncSession, data: UserCreate) -> User:
     if await user_repo.get_by_username(db, data.username):
         raise HTTPException(status.HTTP_409_CONFLICT, detail="用户名已被占用")
     pwd_hash = await asyncio.to_thread(hash_password, data.password)
-    user = await user_repo.create(
-        db,
-        username=data.username,
-        password_hash=pwd_hash,
-        nickname=data.nickname or data.username,
-    )
+    try:
+        user = await user_repo.create(
+            db,
+            username=data.username,
+            password_hash=pwd_hash,
+            nickname=data.nickname or data.username,
+        )
+    except IntegrityError:
+        # 并发撞名：先查后插的竞态，后到者会被唯一约束拦下。
+        # 与 add_favorite 同一套思路——把约束冲突翻译成业务语义（409），而不是 500。
+        await db.rollback()
+        raise HTTPException(status.HTTP_409_CONFLICT, detail="用户名已被占用")
     return user
 
 

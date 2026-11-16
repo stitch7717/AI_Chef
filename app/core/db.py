@@ -15,6 +15,7 @@ FastAPI 的事件循环里，同步数据库调用会阻塞整个 worker；
 asyncpg 驱动让数据库等待期间线程可以去处理其他请求——这正是并发能力的关键。
 """
 
+import os
 from collections.abc import AsyncGenerator
 
 from sqlalchemy.ext.asyncio import (
@@ -25,11 +26,17 @@ from sqlalchemy.ext.asyncio import (
 
 from app.core.config import settings
 
-# 连接池：默认 pool_size=5 / max_overflow=10，可按并发量调大
+# 连接池：容量必须与 worker 数联动
+#   单实例最大连接 = pool_size + max_overflow
+#   多实例/多 worker 时总量 = 实例数 × (pool_size + max_overflow)，要小于 PG 的 max_connections
+#   例：4 worker × 30 = 120 > 默认 100 → 会出现"实例越多越连不上"的雪崩
+POOL_SIZE = int(os.getenv("DB_POOL_SIZE", "10"))
+MAX_OVERFLOW = int(os.getenv("DB_MAX_OVERFLOW", "20"))
+
 engine = create_async_engine(
     settings.DATABASE_URL,
-    pool_size=10,
-    max_overflow=20,
+    pool_size=POOL_SIZE,
+    max_overflow=MAX_OVERFLOW,
     pool_pre_ping=True,      # 每次取连接前探活，防止拿到断开的连接
     echo=False,              # True 时打印所有 SQL（调试用）
 )

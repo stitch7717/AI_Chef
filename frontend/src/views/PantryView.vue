@@ -151,7 +151,8 @@
 
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import ElMessage from 'element-plus/es/components/message'
+import ElMessageBox from 'element-plus/es/components/message-box'
 import { Plus } from '@element-plus/icons-vue'
 import { api, errMsg } from '../api'
 import { INGREDIENTS, UNIT_OPTIONS, COUNT_UNITS, UNIT_STEP, matchIngredient, toGrams, fmtWeight } from '../data/ingredients'

@@ -40,7 +40,7 @@ export const api = {
  * SSE 流式对话（fetch 实现，因为 EventSource 不支持 POST 与自定义 Header）
  * @param {number} sessionId
  * @param {{message: string, image_url?: string}} payload
- * @param {{onStart?, onToken?, onDone?, onError?}} handlers
+ * @param {{onStart?, onToken?, onDone?, onFallback?, onError?}} handlers
  */
 export async function streamChat(sessionId, payload, handlers) {
   const token = localStorage.getItem('token')
@@ -79,6 +79,7 @@ export async function streamChat(sessionId, payload, handlers) {
       if (event === 'start') handlers.onStart?.(parsed)
       else if (event === 'token') handlers.onToken?.(parsed.text)
       else if (event === 'done') handlers.onDone?.(parsed)
+      else if (event === 'fallback') handlers.onFallback?.(parsed)
       else if (event === 'error') handlers.onError?.(parsed.detail)
     }
   }

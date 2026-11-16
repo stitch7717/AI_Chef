@@ -11,10 +11,10 @@
 
 import os
 
+from langchain.agents import create_agent
 from langchain_openai import ChatOpenAI
 from langchain_tavily import TavilySearch
 from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
-from langgraph.prebuilt import create_react_agent
 from psycopg_pool import AsyncConnectionPool
 
 from app.agents.recipe_rag import search_local_recipes
@@ -75,10 +75,12 @@ async def build_agent() -> tuple:
         tavily_api_key=settings.TAVILY_API_KEY,   # 显式传参：.env 不会自动进环境变量
     )
 
-    agent = create_react_agent(
+    # create_agent 是 create_react_agent 的正式继任者（langchain.agents），
+    # prompt 参数更名为 system_prompt；返回的图同样支持 ainvoke/astream(messages)
+    agent = create_agent(
         model=model,
         tools=[search_local_recipes, web_search],
-        prompt=SYSTEM_PROMPT,
+        system_prompt=SYSTEM_PROMPT,
         checkpointer=checkpointer,
     )
     return agent, _pool

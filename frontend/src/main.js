@@ -1,16 +1,16 @@
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
-import ElementPlus, { ElMessage } from 'element-plus'
-import 'element-plus/dist/index.css'
-import zhCn from 'element-plus/es/locale/lang/zh-cn'
-
+// 命令式 API（ElMessage/ElMessageBox）不走模板，必须深路径导入才能被摇树；
+// 从 'element-plus' 主入口导入会打包整个 950KB 组件库
+import ElMessage from 'element-plus/es/components/message'
+import 'element-plus/es/components/message/style/css'
+import 'element-plus/es/components/message-box/style/css'
 import App from './App.vue'
 import router from './router'
 
 const app = createApp(App)
 app.use(createPinia())
 app.use(router)
-app.use(ElementPlus, { locale: zhCn })
 
 // 全局异常兜底：组件抛错时不至于白屏，给用户可读提示（业务级基础保障）
 app.config.errorHandler = (err, _instance, info) => {

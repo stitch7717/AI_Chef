@@ -4,7 +4,7 @@
 阶段 2 的 Agent 对话接口会复用这里的数据（langgraph_thread_id）。
 """
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_current_user
@@ -20,8 +20,8 @@ router = APIRouter(prefix="/sessions", tags=["会话"])
 async def list_sessions(
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
-    limit: int = 50,
-    offset: int = 0,
+    limit: int = Query(50, ge=1, le=100, description="每页数量（1-100）"),
+    offset: int = Query(0, ge=0, description="偏移量，不能为负"),
 ):
     """我的会话列表（按最近活跃排序）"""
     return await chat_repo.list_by_user(db, user.id, limit, offset)

@@ -15,20 +15,17 @@ from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.responses import StreamingResponse
-from slowapi import Limiter
-from slowapi.util import get_remote_address
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_current_user
 from app.core.config import settings
 from app.core.db import get_db
+from app.core.ratelimit import limiter
 from app.models.chat import ChatSession, Message
 from app.models.user import User
 from app.repositories import chat as chat_repo
 from app.schemas.chat_extra import ChatStreamIn
-
-limiter = Limiter(key_func=get_remote_address)
 
 router = APIRouter(prefix="/chat", tags=["AI 对话"])
 
@@ -74,6 +71,20 @@ async def _stream_agent_events(agent, session: ChatSession, message: str, image_
                     yield part.get("text", "")
 
 
+def _classify_llm_error(exc: Exception) -> str:
+    """把模型侧的异常翻译成前端可提示的类别（quota/auth/busy/timeout/unknown）。"""
+    text = f"{type(exc).__name__} {exc}"
+    if "402" in text or "Insufficient Balance" in text or "quota" in text.lower():
+        return "quota"
+    if "401" in text or "InvalidApiKey" in text or "authentication" in text.lower():
+        return "auth"
+    if "429" in text or "rate limit" in text.lower():
+        return "busy"
+    if "timeout" in text.lower() or "Timeout" in text:
+        return "timeout"
+    return "unknown"
+
+
 def _sse(event: str, data: dict) -> str:
     return f"event: {event}\ndata: {json.dumps(data, ensure_ascii=False)}\n\n"
 
@@ -116,7 +127,22 @@ async def chat_stream(
                 "user_message_id": user_msg.id,
                 "assistant_message_id": assistant_msg.id,
             })
-        except Exception as e:   # 模型超时/密钥错误等，给前端一个可读的终止事件
+        except Exception as e:   # 模型超时/余额不足/限流等
+            # 业务降级：模型不可用时用本地 RAG 兜底推荐，页面不至于空白
+            try:
+                from app.agents.recipe_rag import search_recipes_by_vector
+
+                cards = await search_recipes_by_vector(data.message, 3)
+                if cards:
+                    yield _sse("fallback", {
+                        "reason": _classify_llm_error(e),
+                        "recipes": [
+                            {"name": c["name"], "difficulty": c["difficulty"]}
+                            for c in cards
+                        ],
+                    })
+            except Exception:   # 兜底也要兜底：RAG 失败不影响错误事件
+                pass
             yield _sse("error", {"detail": f"对话生成失败：{type(e).__name__}: {e}"})
 
     return StreamingResponse(

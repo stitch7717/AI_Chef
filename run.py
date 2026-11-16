@@ -27,7 +27,9 @@ async def serve(port: int) -> None:
     config = uvicorn.Config(
         "app.main:app", host="127.0.0.1", port=port, log_level="info",
         proxy_headers=True,            # 信任反向代理头（nginx 传来的 X-Forwarded-For）
-        forwarded_allow_ips="*",       # 容器网段内网可信；生产应收敛为 nginx 所在网段
+        # 只信任本机与 Docker 私网段（nginx 容器在这里面）；
+        # 写成 "*" 会让任何直连者用伪造的 X-Forwarded-For 绕过限流。
+        forwarded_allow_ips="127.0.0.1,172.16.0.0/12,10.0.0.0/8,192.168.0.0/16",
         limit_concurrency=500,         # 超过则返回 503，防止过载雪崩（对标 Tomcat maxConnections）
     )
     server = uvicorn.Server(config)

@@ -1,6 +1,6 @@
 """菜谱 / 收藏 / 反馈的数据访问层。"""
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -16,16 +16,29 @@ async def get_by_id(db: AsyncSession, recipe_id: int) -> Recipe | None:
     return await db.get(Recipe, recipe_id)
 
 
+def _escape_like(keyword: str) -> str:
+    """转义 LIKE 元字符：参数化能防注入，但防不住 % 和 _ 被当通配符用。"""
+    return (
+        keyword.replace("\\", "\\\\")
+        .replace("%", "\\%")
+        .replace("_", "\\_")
+    )
+
+
 async def search_by_name(db: AsyncSession, keyword: str, limit: int = 20):
+    kw = _escape_like(keyword)
     result = await db.execute(
-        select(Recipe).where(Recipe.name.ilike(f"%{keyword}%")).limit(limit)
+        select(Recipe)
+        .where(Recipe.name.ilike(f"%{kw}%", escape="\\"))
+        .limit(limit)
     )
     return result.scalars().all()
 
 
 async def count_all(db: AsyncSession) -> int:
-    result = await db.execute(select(Recipe.id))
-    return len(result.scalars().all())
+    """菜谱总数（用 COUNT 聚合，别把全表主键拉进内存）。"""
+    result = await db.execute(select(func.count()).select_from(Recipe))
+    return int(result.scalar_one())
 
 
 async def upsert(db: AsyncSession, recipe: Recipe) -> Recipe:
@@ -46,6 +59,17 @@ async def list_favorites(db: AsyncSession, user_id: int):
         select(Favorite).where(Favorite.user_id == user_id).order_by(Favorite.created_at.desc())
     )
     return result.scalars().all()
+
+
+async def list_favorite_recipes(db: AsyncSession, user_id: int) -> list[Recipe]:
+    """我的收藏（一条 JOIN 查完，避免 N+1）。"""
+    result = await db.execute(
+        select(Recipe)
+        .join(Favorite, Favorite.recipe_id == Recipe.id)
+        .where(Favorite.user_id == user_id)
+        .order_by(Favorite.created_at.desc())
+    )
+    return list(result.scalars().all())
 
 
 async def get_favorite(db: AsyncSession, user_id: int, recipe_id: int) -> Favorite | None:

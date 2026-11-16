@@ -43,6 +43,9 @@ services:
       DATABASE_URL_SYNC: postgresql+psycopg://lc:${POSTGRES_PASSWORD}@postgres:5432/lc_course
       REDIS_URL: redis://redis:6379/0
       HF_ENDPOINT: https://hf-mirror.com
+      # 连接池：单实例上限 = pool+overflow；多实例时要保证 实例数×(pool+overflow) < PG max_connections
+      DB_POOL_SIZE: ${DB_POOL_SIZE:-10}
+      DB_MAX_OVERFLOW: ${DB_MAX_OVERFLOW:-20}
     depends_on:
       postgres:
         condition: service_healthy
