@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>AI 私厨 · 交互原型</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #0f1626; --panel: #182136; --line: #263147; --ink: #e8eefb;
+    --muted: #8fa0bd; --brand: #3d7fff; --ok: #35c4b5;
+  }
+  body {
+    font-family: "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+    background: var(--bg); color: var(--ink); height: 100vh; display: flex; overflow: hidden;
+  }
+
+  /* ---------- 左侧导航 ---------- */
+  aside {
+    width: 260px; flex-shrink: 0; background: var(--panel);
+    border-right: 1px solid var(--line); display: flex; flex-direction: column;
+  }
+  .brand { padding: 18px 20px 14px; border-bottom: 1px solid var(--line); }
+  .brand b { font-size: 15px; letter-spacing: .3px; }
+  .brand small { display: block; color: var(--muted); font-size: 11px; margin-top: 4px; }
+  .group { padding: 14px 20px 6px; color: var(--muted); font-size: 11px; letter-spacing: 1px; }
+  .nav { overflow-y: auto; padding-bottom: 12px; }
+  .nav button {
+    display: flex; gap: 10px; align-items: baseline; width: 100%; text-align: left;
+    background: none; border: none; color: var(--ink); font-size: 13px;
+    padding: 9px 20px; cursor: pointer; border-left: 2px solid transparent;
+    font-family: inherit;
+  }
+  .nav button:hover { background: rgba(61,127,255,.08); }
+  .nav button.on { background: rgba(61,127,255,.14); border-left-color: var(--brand); color: #fff; }
+  .nav button i { color: var(--muted); font-style: normal; font-size: 11px; min-width: 18px; }
+  .nav button.on i { color: var(--brand); }
+
+  /* ---------- 舞台 ---------- */
+  main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+  .topbar {
+    height: 46px; flex-shrink: 0; display: flex; align-items: center; gap: 14px;
+    padding: 0 20px; border-bottom: 1px solid var(--line); color: var(--muted); font-size: 12px;
+  }
+  .topbar b { color: var(--ink); font-size: 13px; }
+  .topbar .sp { flex: 1; }
+  .topbar kbd {
+    background: #22304a; border: 1px solid var(--line); border-radius: 4px;
+    padding: 2px 6px; font-size: 11px; color: var(--ink);
+  }
+
+  .stage {
+    flex: 1; position: relative; display: flex; align-items: center; justify-content: center;
+    overflow: auto; padding: 24px;
+  }
+  .zbtn {
+    background: #22304a; border: 1px solid var(--line); color: var(--muted);
+    font-size: 11px; padding: 3px 9px; border-radius: 5px; cursor: pointer; font-family: inherit;
+  }
+  .zbtn.on { background: var(--brand); border-color: var(--brand); color: #fff; }
+  .frame-wrap { position: relative; transform-origin: center center; }
+  .frame-wrap img { display: block; width: 100%; height: 100%; object-fit: fill; border-radius: 10px; }
+
+  /* 浏览器窗口外框（桌面） */
+  .browser {
+    border-radius: 12px; overflow: hidden; background: #fff;
+    box-shadow: 0 24px 60px rgba(0,0,0,.55); border: 1px solid #2a3a55;
+  }
+  .browser .bar {
+    height: 30px; background: #eef2f8; display: flex; align-items: center; gap: 6px;
+    padding: 0 12px; border-bottom: 1px solid #dde5f0;
+  }
+  .browser .dot { width: 9px; height: 9px; border-radius: 50%; }
+  .browser .addr {
+    flex: 1; height: 16px; border-radius: 8px; background: #fff; margin-left: 8px;
+    font-size: 9px; color: #8798b3; display: flex; align-items: center; padding: 0 8px;
+  }
+  /* 手机外框 */
+  .phone {
+    border-radius: 34px; overflow: hidden; background: #fff; position: relative;
+    box-shadow: 0 24px 60px rgba(0,0,0,.55); border: 8px solid #0b1220; outline: 1px solid #2c3a55;
+  }
+
+  /* 热区 */
+  .hotspot {
+    position: absolute; border: 1.5px dashed transparent; border-radius: 6px;
+    cursor: pointer; transition: border-color .12s, background .12s;
+  }
+  .hotspot:hover { border-color: rgba(61,127,255,.95); background: rgba(61,127,255,.16); }
+  .hotspot::after {
+    content: attr(data-label); position: absolute; left: 50%; top: -22px; transform: translateX(-50%);
+    background: var(--brand); color: #fff; font-size: 10px; padding: 2px 7px; border-radius: 4px;
+    white-space: nowrap; opacity: 0; transition: opacity .12s; pointer-events: none;
+  }
+  .hotspot:hover::after { opacity: 1; }
+  body.show-zones .hotspot { border-color: rgba(61,127,255,.5); background: rgba(61,127,255,.08); }
+  body.show-zones .hotspot::after { opacity: 1; }
+
+  /* ---------- 落地页（纯 HTML 原型） ---------- */
+  .landing { width: 100%; height: 100%; position: relative; overflow: hidden; background: #0b1220; }
+  .landing .bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  .landing .scrim {
+    position: absolute; inset: 0;
+    background: linear-gradient(180deg, rgba(6,12,24,.72) 0%, rgba(6,12,24,.28) 34%, rgba(6,12,24,.86) 100%);
+  }
+  .landing nav {
+    position: relative; z-index: 2; display: flex; align-items: center; gap: 20px;
+    padding: 16px 26px; color: #fff; font-size: 12px;
+  }
+  .landing nav .logo { display: flex; align-items: center; gap: 7px; font-size: 14px; font-weight: 700; }
+  .landing nav .logo span { font-size: 17px; }
+  .landing nav a { color: #fff; text-decoration: none; text-shadow: 0 1px 6px rgba(0,0,0,.5); opacity: .92; }
+  .landing nav a:hover { opacity: 1; }
+  .landing nav .sp { flex: 1; }
+  .landing .ghost { padding: 6px 10px; }
+  .landing .pill {
+    background: var(--ok); color: #06251f; font-weight: 700; padding: 7px 16px;
+    border-radius: 999px; box-shadow: 0 6px 18px rgba(53,196,181,.35);
+  }
+  .landing .hero {
+    position: relative; z-index: 2; padding: 26px 26px 0; color: #fff;
+    display: flex; flex-direction: column; height: calc(100% - 56px);
+  }
+  .landing .tag {
+    align-self: flex-start; font-size: 10px; letter-spacing: .8px; padding: 4px 10px;
+    border: 1px solid rgba(255,255,255,.4); border-radius: 999px; margin-bottom: 12px;
+  }
+  .landing h1 {
+    font-size: 30px; line-height: 1.4; max-width: 15em; font-weight: 800;
+    text-shadow: 0 2px 20px rgba(0,0,0,.45);
+  }
+  .landing h1 em { font-style: normal; color: #7fe3d4; }
+  .landing p.sub {
+    margin-top: 10px; font-size: 12.5px; line-height: 1.8; color: rgba(255,255,255,.82);
+    max-width: 34em; text-shadow: 0 1px 8px rgba(0,0,0,.5);
+  }
+  .landing .cta { display: flex; gap: 12px; margin-top: 18px; }
+  .landing .btn-main {
+    background: var(--ok); color: #06251f; font-weight: 700; font-size: 13px;
+    padding: 11px 22px; border: none; border-radius: 10px; cursor: pointer;
+  }
+  .landing .btn-ghost {
+    background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.45);
+    color: #fff; font-size: 13px; padding: 11px 20px; border-radius: 10px; cursor: pointer;
+    backdrop-filter: blur(6px);
+  }
+  .landing .cards {
+    margin-top: auto; display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; padding-bottom: 22px;
+  }
+  .landing .card {
+    background: rgba(255,255,255,.09); border: 1px solid rgba(255,255,255,.16);
+    border-radius: 12px; padding: 12px 14px; backdrop-filter: blur(8px);
+  }
+  .landing .card b { font-size: 12.5px; display: block; margin-bottom: 4px; }
+  .landing .card small { font-size: 11px; color: rgba(255,255,255,.72); line-height: 1.6; }
+
+  /* 右侧说明 */
+  .notes {
+    width: 250px; flex-shrink: 0; border-left: 1px solid var(--line); background: var(--panel);
+    padding: 18px 18px 20px; overflow-y: auto;
+  }
+  .notes h3 { font-size: 13px; margin-bottom: 10px; }
+  .notes .row { margin-bottom: 12px; }
+  .notes .row span { display: block; color: var(--muted); font-size: 11px; margin-bottom: 4px; }
+  .notes .row p { font-size: 12px; line-height: 1.75; color: #cfd9ec; }
+  .notes ul { padding-left: 16px; }
+  .notes li { font-size: 12px; line-height: 1.8; color: #cfd9ec; }
+  .notes .hint { margin-top: 14px; font-size: 11px; color: var(--muted); line-height: 1.7;
+    border-top: 1px dashed var(--line); padding-top: 12px; }
+</style>
+</head>
+<body>
+
+<aside>
+  <div class="brand">
+    <b>AI 私厨 · 交互原型</b>
+    <small>点击页面内虚线区域可跳转</small>
+  </div>
+  <div class="nav" id="nav"></div>
+</aside>
+
+<main>
+  <div class="topbar">
+    <b id="crumb">落地页</b>
+    <span id="devTag"></span>
+    <span class="sp"></span>
+    <span class="zoom">
+      <button id="zFit" class="zbtn on">适应窗口</button>
+      <button id="zReal" class="zbtn">1:1</button>
+    </span>
+    <span><kbd>←</kbd> <kbd>→</kbd> 翻页</span>
+    <span><kbd>H</kbd> 显示热区</span>
+  </div>
+  <div class="stage" id="stage"></div>
+</main>
+
+<div class="notes" id="notes"></div>
+
+<script>
+/* ---------- 页面清单：图片类用截图，落地页用 HTML 现画 ---------- */
+const SHOTS = "../screenshots/";
+const SCREENS = [
+  {
+    id: "landing", group: "产品页", name: "落地页（免登录）", device: "desktop", kind: "landing",
+    goal: "第一次进来的人 10 秒内知道这是什么、能干什么。",
+    points: ["大图 + 渐变蒙层保证白字可读", "导航区分登录态：未登录显示登录/注册", "主 CTA 直接进登录，次 CTA 看菜谱"],
+    hotspots: []
+  },
+  {
+    id: "login", group: "产品页", name: "登录 / 注册", device: "desktop", src: SHOTS + "01-login.png",
+    goal: "一个页面承载登录与注册，减少跳转。",
+    points: ["Tab 切换登录/注册，无需跳页", "错误提示统一为「用户名或密码错误」，防账号枚举", "登录按钮 10 次/分钟限流"],
+    hotspots: [
+      { x: 61.8, y: 61.6, w: 26.4, h: 4.4, to: "chat", label: "登录 → 对话页" },
+      { x: 75.0, y: 42.0, w: 13.2, h: 4.4, to: "login", label: "切到注册（同页 Tab）" }
+    ]
+  },
+  {
+    id: "chat", group: "核心流程", name: "AI 对话", device: "desktop", src: SHOTS + "02-chat.png",
+    goal: "主场景：说一句或传张照片，拿到可执行的做法。",
+    points: ["SSE 流式输出，逐字出现", "先查本地菜谱库（相似度≥0.55），未命中才联网", "左侧会话列表，可新建/切换/删除"],
+    hotspots: [
+      { x: 0.8, y: 14.4, w: 14.1, h: 4.9, to: "pantry", label: "我的库存" },
+      { x: 0.8, y: 20.0, w: 14.1, h: 4.9, to: "recipes", label: "发现菜谱" },
+      { x: 38.5, y: 90.6, w: 54.7, h: 3.7, to: "chat", label: "输入框（原型不接后端）" }
+    ]
+  },
+  {
+    id: "pantry", group: "核心流程", name: "我的库存", device: "desktop", src: SHOTS + "03-pantry.png",
+    goal: "把冰箱里的东西记下来，才知道能做什么。",
+    points: ["单位只用 7 种精确单位，个/条/片 按平均重量折算", "同名食材原子 upsert，并发不丢数量", "概览卡汇总在库数量与总重量"],
+    hotspots: [
+      { x: 78.2, y: 32.0, w: 7.4, h: 3.6, to: "add", label: "添加食材 → 弹窗" },
+      { x: 0.8, y: 20.0, w: 14.1, h: 4.9, to: "recipes", label: "发现菜谱" }
+    ]
+  },
+  {
+    id: "add", group: "核心流程", name: "添加食材（弹窗）", device: "desktop", src: SHOTS + "05-add-ingredient.png",
+    goal: "录入要快：输一个字就出候选，选中自动带单位。",
+    points: ["联想下拉带缩略图、分类、常用单位", "只输「鸡」也能预览到「鸡蛋」", "单位下拉只有 7 个合法值"],
+    hotspots: [
+      { x: 30.0, y: 37.0, w: 40.0, h: 45.0, to: "pantry", label: "关闭 / 保存 → 回到库存" }
+    ]
+  },
+  {
+    id: "recipes", group: "核心流程", name: "发现菜谱", device: "desktop", src: SHOTS + "04-recipes.png",
+    goal: "没有明确想吃的，就逛一逛。",
+    points: ["瀑布流卡片，真实菜品图 + 难度 + 食材标签", "搜索走字面匹配（转义 % 与 _）", "卡片可收藏、可查看做法"],
+    hotspots: [
+      { x: 22.6, y: 17.2, w: 22.8, h: 28.9, to: "chat", label: "看菜谱 → 回到对话询问" },
+      { x: 0.8, y: 8.9, w: 14.1, h: 4.9, to: "chat", label: "AI 对话" }
+    ]
+  },
+  {
+    id: "m-chat", group: "移动端", name: "对话（移动）", device: "mobile", src: SHOTS + "06-mobile-chat.png",
+    goal: "手机上单手用：底部 Tab 切换三大功能。",
+    points: ["会话切换收进左侧抽屉", "顶栏显示当前会话标题", "输入区随键盘上移"],
+    hotspots: [
+      { x: 33.3, y: 93.5, w: 33.3, h: 6.5, to: "m-pantry", label: "库存 Tab" },
+      { x: 66.7, y: 93.5, w: 33.3, h: 6.5, to: "m-recipes", label: "发现 Tab" },
+      { x: 3.1, y: 1.2, w: 8.7, h: 4.0, to: "m-chat", label: "会话抽屉（原型未展开）" }
+    ]
+  },
+  {
+    id: "m-pantry", group: "移动端", name: "库存（移动）", device: "mobile", src: SHOTS + "08-mobile-pantry.png",
+    goal: "在超市/厨房边看边记。",
+    points: ["行卡信息压缩为 图 + 名称 + 数量折算", "操作按钮常显，不依赖 hover", "概览卡在首屏顶部"],
+    hotspots: [
+      { x: 33.3, y: 93.5, w: 33.3, h: 6.5, to: "m-chat", label: "对话 Tab" },
+      { x: 66.7, y: 93.5, w: 33.3, h: 6.5, to: "m-recipes", label: "发现 Tab" }
+    ]
+  },
+  {
+    id: "m-recipes", group: "移动端", name: "发现（移动）", device: "mobile", src: SHOTS + "07-mobile-recipes.png",
+    goal: "滑动浏览，两列瀑布流。",
+    points: ["两列瀑布流，图片懒加载", "顶部搜索常驻", "底部 Tab 保持可达"],
+    hotspots: [
+      { x: 33.3, y: 93.5, w: 33.3, h: 6.5, to: "m-pantry", label: "库存 Tab" },
+      { x: 0.0, y: 93.5, w: 33.3, h: 6.5, to: "m-chat", label: "对话 Tab" }
+    ]
+  }
+];
+
+/* 落地页背景图（复用项目里的菜品实拍图） */
+const HERO_IMG = "../../frontend/public/recipe-images/30.jpg";
+
+const DESKTOP = { w: 1440, h: 900 };
+const MOBILE = { w: 390, h: 844 };
+
+let idx = 0;
+let zoomMode = "fit";   // fit | real
+const stage = document.getElementById("stage");
+const navEl = document.getElementById("nav");
+const notesEl = document.getElementById("notes");
+const crumb = document.getElementById("crumb");
+const devTag = document.getElementById("devTag");
+
+/* ---------- 左侧列表 ---------- */
+function buildNav() {
+  let html = "", lastGroup = "";
+  SCREENS.forEach((s, i) => {
+    if (s.group !== lastGroup) {
+      html += `<div class="group">${s.group}</div>`;
+      lastGroup = s.group;
+    }
+    html += `<button data-i="${i}"><i>${String(i + 1).padStart(2, "0")}</i>${s.name}</button>`;
+  });
+  navEl.innerHTML = html;
+  navEl.querySelectorAll("button").forEach((b) => {
+    b.addEventListener("click", () => go(Number(b.dataset.i)));
+  });
+}
+
+/* ---------- 渲染 ---------- */
+function go(i) {
+  idx = Math.max(0, Math.min(SCREENS.length - 1, i));
+  const s = SCREENS[idx];
+  const size = s.device === "mobile" ? MOBILE : DESKTOP;
+
+  // 舞台可用尺寸 → 计算缩放
+  const pad = 48;
+  const availW = stage.clientWidth - pad;
+  const availH = stage.clientHeight - pad;
+  const chromeH = s.device === "mobile" ? 16 : 30;   // 外框占位
+  const fit = Math.min(availW / size.w, (availH - chromeH) / size.h, 1);
+  const scale = zoomMode === "real" ? 1 : fit;
+  stage.style.padding = zoomMode === "real" ? "24px" : "24px";
+
+  const inner = s.kind === "landing" ? landingHTML(size) : `<img src="${s.src}" alt="${s.name}">`;
+
+  const hotspots = (s.hotspots || []).map((h) => {
+    const to = SCREENS.findIndex((x) => x.id === h.to);
+    return `<div class="hotspot" data-to="${to}" data-label="${h.label}"
+      style="left:${h.x}%;top:${h.y}%;width:${h.w}%;height:${h.h}%"></div>`;
+  }).join("");
+
+  if (s.device === "mobile") {
+    stage.innerHTML = `
+      <div class="frame-wrap" style="width:${size.w * scale}px;height:${size.h * scale}px">
+        <div class="phone" style="width:${size.w}px;height:${size.h}px;transform:scale(${scale});transform-origin:top left">
+          ${inner}${hotspots}
+        </div>
+      </div>`;
+  } else {
+    stage.innerHTML = `
+      <div class="frame-wrap" style="width:${size.w * scale}px;height:${(size.h + chromeH) * scale}px">
+        <div class="browser" style="width:${size.w}px;height:${size.h + chromeH}px;transform:scale(${scale});transform-origin:top left">
+          <div class="bar">
+            <span class="dot" style="background:#ff5f57"></span>
+            <span class="dot" style="background:#febc2e"></span>
+            <span class="dot" style="background:#28c840"></span>
+            <span class="addr">localhost:8080${s.id === "landing" ? "/" : "/" + s.id}</span>
+          </div>
+          <div style="position:relative;width:${size.w}px;height:${size.h}px;background:#fff">
+            ${inner}${hotspots}
+          </div>
+        </div>
+      </div>`;
+  }
+
+  stage.querySelectorAll(".hotspot").forEach((el) => {
+    el.addEventListener("click", () => go(Number(el.dataset.to)));
+  });
+
+  // 高亮列表 + 说明
+  navEl.querySelectorAll("button").forEach((b, i) => b.classList.toggle("on", i === idx));
+  crumb.textContent = s.name;
+  devTag.textContent = s.device === "mobile" ? "390 × 844" : "1440 × 900";
+  notesEl.innerHTML = `
+    <h3>${s.name}</h3>
+    <div class="row"><span>这个页面解决什么</span><p>${s.goal}</p></div>
+    <div class="row"><span>设计要点</span><ul>${s.points.map((p) => `<li>${p}</li>`).join("")}</ul></div>
+    <div class="hint">虚线区域为可点击热区，按 <b>H</b> 常显；<b>←</b> <b>→</b> 切换页面。</div>`;
+}
+
+/* ---------- 落地页 HTML ---------- */
+function landingHTML(size) {
+  return `
+  <div class="landing" style="width:${size.w}px;height:${size.h}px">
+    <img class="bg" src="${HERO_IMG}" alt="">
+    <div class="scrim"></div>
+    <nav>
+      <div class="logo"><span>🍳</span> AI 私厨</div>
+      <a href="#" onclick="return false">功能</a>
+      <a href="#" onclick="return false">菜谱库</a>
+      <a href="#" onclick="return false">关于</a>
+      <span class="sp"></span>
+      <a class="ghost" href="#" onclick="return false">登录</a>
+      <a class="pill" href="#" onclick="return false">免费注册</a>
+    </nav>
+    <div class="hero">
+      <span class="tag">AI CHEF · 私人厨师</span>
+      <h1>冰箱里有什么，<br>就做什么。<em>拍张照就行。</em></h1>
+      <p class="sub">告诉我你有什么食材，或者直接拍一张冰箱的照片。我会优先从 123 道菜谱里找最合适的做法，找不到再联网，最后给你一份带克数、步骤和营养的清单。</p>
+      <div class="cta">
+        <button class="btn-main">开始做饭</button>
+        <button class="btn-ghost">先看看菜谱</button>
+      </div>
+      <div class="cards">
+        <div class="card"><b>拍照识食材</b><small>一张冰箱照片，自动认出里面有什么</small></div>
+        <div class="card"><b>按库存推荐</b><small>只用手头有的东西，不让你再去买菜</small></div>
+        <div class="card"><b>记住你的口味</b><small>做完打分，下次推荐更准</small></div>
+      </div>
+    </div>
+  </div>`;
+}
+
+/* ---------- 交互 ---------- */
+document.addEventListener("keydown", (e) => {
+  if (e.key === "ArrowRight") go(idx + 1);
+  else if (e.key === "ArrowLeft") go(idx - 1);
+  else if (e.key === "h" || e.key === "H") document.body.classList.toggle("show-zones");
+});
+
+// 落地页里的按钮热区（纯 HTML 页，单独绑定）
+stage.addEventListener("click", (e) => {
+  const t = e.target;
+  if (t.classList.contains("btn-main") || t.classList.contains("pill")) {
+    go(SCREENS.findIndex((s) => s.id === "login"));
+  } else if (t.classList.contains("btn-ghost")) {
+    go(SCREENS.findIndex((s) => s.id === "recipes"));
+  } else if (t.classList.contains("ghost")) {
+    go(SCREENS.findIndex((s) => s.id === "login"));
+  }
+});
+
+const zFit = document.getElementById("zFit");
+const zReal = document.getElementById("zReal");
+function setZoom(mode) {
+  zoomMode = mode;
+  zFit.classList.toggle("on", mode === "fit");
+  zReal.classList.toggle("on", mode === "real");
+  go(idx);
+}
+zFit.addEventListener("click", () => setZoom("fit"));
+zReal.addEventListener("click", () => setZoom("real"));
+
+window.addEventListener("resize", () => go(idx));
+buildNav();
+go(0);
+</script>
+</body>
+</html>
